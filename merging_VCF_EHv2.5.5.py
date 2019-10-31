@@ -393,7 +393,7 @@ def run(argv=None):
     if not parser.check_required("--O"):
         raise IOError('The output directory in which the merged VCF files will be write is missing')
 
-    if options.f_samples != None:
+    if not options.f_samples == None:
 
         path_samples = options.f_samples
 
@@ -413,7 +413,6 @@ def run(argv=None):
             raise IOError('The name for the merged VCF is missing %s') % merged_vcf
 
         output_file = os.path.join(output_folder, merged_vcf)
-
 
         # Configure logger
         formatter = logging.Formatter('%(asctime)s - %(module)s - %(levelname)s - %(message)s')
