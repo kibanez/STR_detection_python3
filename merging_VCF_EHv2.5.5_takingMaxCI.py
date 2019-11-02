@@ -168,8 +168,6 @@ def merging_vcf(l_vcf, path_vcf, logger):
 
                                 hash_table[(r.CHROM, pos, gene, allele)] = hash_variant
 
-
-
                         elif hash_variant.get('gt') == '1/1':
                             allele = max_ci_allele2
                             hash_variant['allele'] = allele
@@ -220,40 +218,29 @@ def merging_vcf(l_vcf, path_vcf, logger):
                                 # we add info to an existing key - repeat size allele
                                 hash_table[(r.CHROM, pos, gene, allele_ref)]['num_samples'] = str(
                                     int(hash_table.get((r.CHROM, pos, gene, allele_ref))['num_samples']) + 1)
-
-                                # we add the LP id in which has been detected the expansion (for extract later on this info)
                                 hash_table[(r.CHROM, pos, gene, allele_ref)]['list_samples'] = \
                                     hash_table.get((r.CHROM, pos, gene, allele_ref))['list_samples'] + ';' + name_vcf
-
                             else:
                                 # we specify the allele
                                 hash_variant['allele'] = allele_ref
-
                                 # we add the new alternative allele info
                                 hash_table[(r.CHROM, pos, gene, allele_ref)] = hash_variant
-
                             if (r.CHROM, pos, gene, allele_alt) in hash_table:
-                                # we add info to an existing key - repeat size allele
                                 hash_table[(r.CHROM, pos, gene, allele_alt)]['num_samples'] = str(
                                     int(hash_table.get((r.CHROM, pos, gene, allele_alt))['num_samples']) + 1)
-
-                                # we add the LP id in which has been detected the expansion (for extract later on this info)
                                 hash_table[(r.CHROM, pos, gene, allele_alt)]['list_samples'] = \
                                     hash_table.get((r.CHROM, pos, gene, allele_alt))['list_samples'] + ';' + name_vcf
-
                             else:
                                 # we specify the allele
                                 # we create a new hash_variant_alt to have different info (!!)
                                 hash_variant_alt = copy.deepcopy(hash_variant)
                                 hash_variant_alt['allele'] = allele_alt
-
                                 # we add the new alternative allele info
                                 hash_table[(r.CHROM, pos, gene, allele_alt)] = hash_variant_alt
 
                         elif hash_variant.get('gt') == '1/2':
                             allele_alt1 = max_ci_allele1
                             allele_alt2 = max_ci_allele2
-
                             if (r.CHROM, pos, gene, allele_alt1) in hash_table:
                                 # we add info to an existing key - repeat size allele
                                 hash_table[(r.CHROM, pos, gene, allele_alt1)]['num_samples'] = str(
