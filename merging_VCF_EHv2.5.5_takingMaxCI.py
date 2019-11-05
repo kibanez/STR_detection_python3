@@ -97,6 +97,9 @@ def merging_vcf(l_vcf, path_vcf, logger):
 
         name_vcf = vcf_input
 
+        if name_vcf == "EH_LP3000113-DNA_D05.vcf":
+            print("kiku")
+
         vcf_input = os.path.join(path_vcf, vcf_input)
 
         if not os.path.isfile(vcf_input):
@@ -165,7 +168,7 @@ def merging_vcf(l_vcf, path_vcf, logger):
                         hash_table[(r.CHROM, pos, gene, allele)] = hash_variant
 
                 elif hash_variant.get('gt') == '1/1':
-                    allele = max_ci_allele2
+                    allele = max_ci_allele1
                     hash_variant['allele'] = allele
 
                     if (r.CHROM, pos, gene, allele) in hash_table:
@@ -186,7 +189,7 @@ def merging_vcf(l_vcf, path_vcf, logger):
                 # From a release we can distinguish between gender, FMR1 and AR. Only 1
                 # allele if the sample is a male
                 elif hash_variant.get('gt') == '1':
-                    allele = max_ci_allele2
+                    allele = max_ci_allele1
                     hash_variant['allele'] = allele
 
                     if (r.CHROM, pos, gene, allele) in hash_table:
