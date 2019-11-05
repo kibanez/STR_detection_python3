@@ -145,8 +145,6 @@ def merging_vcf(l_vcf, path_vcf, logger):
                 hash_variant['num_samples'] = '1'
                 hash_variant['list_samples'] = name_vcf
 
-
-
                 # Before: each variant consists of CHROM, POS, with the REF and its ALT alleles,
                 # in which alt is not the alternate allele, but the STR repeats
                 # Now: depending on the genotype (GT) we will check which alleles are frequent in our cohort
