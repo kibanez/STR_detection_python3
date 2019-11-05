@@ -113,169 +113,161 @@ def merging_vcf(l_vcf, path_vcf, logger):
 
         for i, r in enumerate(vcf_reader):
 
-            try:
+            hash_fields = dict(r.INFO)
+            hash_fields.update(dict(zip(r.samples[0].data._fields, r.samples[0].data)))
 
-                hash_fields = dict(r.INFO)
-                hash_fields.update(dict(zip(r.samples[0].data._fields, r.samples[0].data)))
+            # We want to take the max value from CI field
+            ci_field = hash_fields.get('REPCI', '0').split('/')
+            max_ci_allele1 = ci_field[0].split('-')[1]
+            if len(ci_field) > 1:
+                max_ci_allele2 = ci_field[1].split('-')[1]
 
-                # We want to take the max value from CI field
-                ci_field = hash_fields.get('REPCI', '0').split('/')
-                max_ci_allele1 = ci_field[0].split('-')[1]
-                if len(ci_field) > 1:
-                    max_ci_allele2 = ci_field[1].split('-')[1]
+            # We only analyse STR markers >=3 length
+            if len(str(hash_fields.get('RU', 0))) >= 3:
+                pos = str(r.INFO['END'] - 1)
+                gene = str(hash_fields.get('REPID', ""))
 
-                # if (hash_fields.get('GT') != '0/0'):
-                if r.ALT != [None]:
-                    # We only analyse STR markers >=3 length
-                    if len(str(hash_fields.get('RU', 0))) >= 3:
-                        pos = str(r.INFO['END'] - 1)
-                        gene = str(hash_fields.get('REPID', ""))
+                # we retrieve all the info contained in the INFO fields
+                hash_variant = {}
+                hash_variant['Repeat_Motif'] = str(hash_fields.get('RU', 0))
+                hash_variant['Reference_length_bp'] = str(hash_fields.get('RL', 0))
+                hash_variant['gene'] = gene
+                hash_variant['gt'] = str(hash_fields.get('GT', ""))
+                hash_variant['chr'] = r.CHROM
+                hash_variant['start'] = str(r.POS)
+                hash_variant['end'] = str(r.INFO['END'])
+                hash_variant['ref'] = r.REF
 
-                        # we retrieve all the info contained in the INFO fields
-                        hash_variant = {}
-                        hash_variant['Repeat_Motif'] = str(hash_fields.get('RU', 0))
-                        hash_variant['Reference_length_bp'] = str(hash_fields.get('RL', 0))
-                        hash_variant['gene'] = gene
-                        hash_variant['gt'] = str(hash_fields.get('GT', ""))
-                        hash_variant['chr'] = r.CHROM
-                        hash_variant['start'] = str(r.POS)
-                        hash_variant['end'] = str(r.INFO['END'])
-                        hash_variant['ref'] = r.REF
+                hash_variant['alt_size'] = str(max_ci_allele1)
+                hash_variant['ref_size'] = str(max_ci_allele2)
+                hash_variant['num_samples'] = '1'
+                hash_variant['list_samples'] = name_vcf
 
-                        hash_variant['alt_size'] = str(max_ci_allele1)
-                        hash_variant['ref_size'] = str(max_ci_allele2)
+                if hash_variant.get('gt') == '0/0':
+                    allele = max_ci_allele1
+                    hash_variant['allele'] = allele
+
+                    if (r.CHROM, pos, gene, allele) in hash_table:
+                        # we add info to an existing key - repeat size allele
+                        hash_table[(r.CHROM, pos, gene, allele)]['num_samples'] = str(int(hash_table.get((r.CHROM, pos, gene, allele))['num_samples']) + 2)
+
+                        # we add the LP id in which has been detected the expansion (for extract later on this info)
+                        hash_table[(r.CHROM, pos, gene, allele)]['list_samples'] = \
+                            hash_table.get((r.CHROM, pos, gene, allele))['list_samples'] + ';' + name_vcf + '_x2'
+
+                    else:
+                        # we add the new alternative allele info
+                        hash_variant['num_samples'] = '2'
+
+                        # we update the number of the genome + '_x2)
+                        hash_variant['list_samples'] = name_vcf + '_x2'
+
+                        hash_table[(r.CHROM, pos, gene, allele)] = hash_variant
+
+                elif hash_variant.get('gt') == '1/1':
+                    allele = max_ci_allele2
+                    hash_variant['allele'] = allele
+
+                    if (r.CHROM, pos, gene, allele) in hash_table:
+                        # we add info to an existing key - repeat size allele
+                        hash_table[(r.CHROM, pos, gene, allele)]['num_samples'] = str(int(hash_table.get((r.CHROM, pos, gene, allele))['num_samples']) + 2)
+
+                        # we add the LP id in which has been detected the expansion (for extract later on this info)
+                        hash_table[(r.CHROM, pos, gene, allele)]['list_samples'] = \
+                            hash_table.get((r.CHROM, pos, gene, allele))['list_samples'] + ';' + name_vcf + '_x2'
+
+                    else:
+                        # we add the new alternative allele info
+                        hash_variant['num_samples'] = '2'
+                        # we update the number of the genome + '_x2)
+                        hash_variant['list_samples'] = name_vcf + '_x2'
+                        hash_table[(r.CHROM, pos, gene, allele)] = hash_variant
+
+                # From a release we can distinguish between gender, FMR1 and AR. Only 1
+                # allele if the sample is a male
+                elif hash_variant.get('gt') == '1':
+                    allele = max_ci_allele2
+                    hash_variant['allele'] = allele
+
+                    if (r.CHROM, pos, gene, allele) in hash_table:
+                        # we add info to an existing key - repeat size allele
+                        hash_table[(r.CHROM, pos, gene, allele)]['num_samples'] = str(
+                            int(hash_table.get((r.CHROM, pos, gene, allele))['num_samples']) + 1)
+
+                        # we add the LP id in which has been detected the expansion (for extract later on this info)
+                        hash_table[(r.CHROM, pos, gene, allele)]['list_samples'] = \
+                            hash_table.get((r.CHROM, pos, gene, allele))['list_samples'] \
+                            + ';' + name_vcf
+
+                    else:
+                        # we add the new alternative allele info
                         hash_variant['num_samples'] = '1'
                         hash_variant['list_samples'] = name_vcf
+                        hash_table[(r.CHROM, pos, gene, allele)] = hash_variant
 
-                        if hash_variant.get('gt') == '0/0':
-                            allele = max_ci_allele1
-                            hash_variant['allele'] = allele
+                elif hash_variant.get('gt') == '0/1':
+                    allele_ref = max_ci_allele1
+                    allele_alt = max_ci_allele2
 
-                            if (r.CHROM, pos, gene, allele) in hash_table:
-                                # we add info to an existing key - repeat size allele
-                                hash_table[(r.CHROM, pos, gene, allele)]['num_samples'] = str(int(hash_table.get((r.CHROM, pos, gene, allele))['num_samples']) + 2)
+                    if (r.CHROM, pos, gene, allele_ref) in hash_table:
+                        # we add info to an existing key - repeat size allele
+                        hash_table[(r.CHROM, pos, gene, allele_ref)]['num_samples'] = str(
+                            int(hash_table.get((r.CHROM, pos, gene, allele_ref))['num_samples']) + 1)
+                        hash_table[(r.CHROM, pos, gene, allele_ref)]['list_samples'] = \
+                            hash_table.get((r.CHROM, pos, gene, allele_ref))['list_samples'] + ';' + name_vcf
+                    else:
+                        # we specify the allele
+                        hash_variant['allele'] = allele_ref
+                        # we add the new alternative allele info
+                        hash_table[(r.CHROM, pos, gene, allele_ref)] = hash_variant
+                    if (r.CHROM, pos, gene, allele_alt) in hash_table:
+                        hash_table[(r.CHROM, pos, gene, allele_alt)]['num_samples'] = str(
+                            int(hash_table.get((r.CHROM, pos, gene, allele_alt))['num_samples']) + 1)
+                        hash_table[(r.CHROM, pos, gene, allele_alt)]['list_samples'] = \
+                            hash_table.get((r.CHROM, pos, gene, allele_alt))['list_samples'] + ';' + name_vcf
+                    else:
+                        # we specify the allele
+                        # we create a new hash_variant_alt to have different info (!!)
+                        hash_variant_alt = copy.deepcopy(hash_variant)
+                        hash_variant_alt['allele'] = allele_alt
+                        # we add the new alternative allele info
+                        hash_table[(r.CHROM, pos, gene, allele_alt)] = hash_variant_alt
 
-                                # we add the LP id in which has been detected the expansion (for extract later on this info)
-                                hash_table[(r.CHROM, pos, gene, allele)]['list_samples'] = \
-                                    hash_table.get((r.CHROM, pos, gene, allele))['list_samples'] + ';' + name_vcf + '_x2'
+                elif hash_variant.get('gt') == '1/2':
+                    allele_alt1 = max_ci_allele1
+                    allele_alt2 = max_ci_allele2
+                    if (r.CHROM, pos, gene, allele_alt1) in hash_table:
+                        # we add info to an existing key - repeat size allele
+                        hash_table[(r.CHROM, pos, gene, allele_alt1)]['num_samples'] = str(
+                            int(hash_table.get((r.CHROM, pos, gene, allele_alt1))['num_samples']) + 1)
 
-                            else:
-                                # we add the new alternative allele info
-                                hash_variant['num_samples'] = '2'
+                        # we add the LP id in which has been detected the expansion (for extract later on this info)
+                        hash_table[(r.CHROM, pos, gene, allele_alt1)]['list_samples'] = \
+                            hash_table.get((r.CHROM, pos, gene, allele_alt1))['list_samples'] + ';' + name_vcf
 
-                                # we update the number of the genome + '_x2)
-                                hash_variant['list_samples'] = name_vcf + '`_2x'
+                    else:
+                        # we specify the allele
+                        hash_variant['allele'] = allele_alt1
 
-                                hash_table[(r.CHROM, pos, gene, allele)] = hash_variant
+                        # we add the new alternative allele info
+                        hash_table[(r.CHROM, pos, gene, allele_alt1)] = hash_variant
 
-                        elif hash_variant.get('gt') == '1/1':
-                            allele = max_ci_allele2
-                            hash_variant['allele'] = allele
+                    if (r.CHROM, pos, gene, allele_alt2) in hash_table:
+                        # we add info to an existing key - repeat size allele
+                        hash_table[(r.CHROM, pos, gene, allele_alt2)]['num_samples'] = str(
+                            int(hash_table.get((r.CHROM, pos, gene, allele_alt2))['num_samples']) + 1)
 
-                            if (r.CHROM, pos, gene, allele) in hash_table:
-                                # we add info to an existing key - repeat size allele
-                                hash_table[(r.CHROM, pos, gene, allele)]['num_samples'] = str(int(hash_table.get((r.CHROM, pos, gene, allele))['num_samples']) + 2)
+                        # we add the LP id in which has been detected the expansion (for extract later on this info)
+                        hash_table[(r.CHROM, pos, gene, allele_alt2)]['list_samples'] = \
+                            hash_table.get((r.CHROM, pos, gene, allele_alt2))['list_samples'] + ';' + name_vcf
 
-                                # we add the LP id in which has been detected the expansion (for extract later on this info)
-                                hash_table[(r.CHROM, pos, gene, allele)]['list_samples'] = \
-                                    hash_table.get((r.CHROM, pos, gene, allele))['list_samples'] + ';' + name_vcf + '_x2'
+                    else:
+                        # we specify the allele
+                        hash_variant_alt = copy.deepcopy(hash_variant)
+                        hash_variant_alt['allele'] = allele_alt2
 
-                            else:
-                                # we add the new alternative allele info
-                                hash_variant['num_samples'] = '2'
-                                # we update the number of the genome + '_x2)
-                                hash_variant['list_samples'] = name_vcf + '`_2x'
-                                hash_table[(r.CHROM, pos, gene, allele)] = hash_variant
-
-                        # From a release we can distinguish between gender, FMR1 and AR. Only 1
-                        # allele if the sample is a male
-                        elif hash_variant.get('gt') == '1':
-                            allele = max_ci_allele1
-                            hash_variant['allele'] = allele
-
-                            if (r.CHROM, pos, gene, allele) in hash_table:
-                                # we add info to an existing key - repeat size allele
-                                hash_table[(r.CHROM, pos, gene, allele)]['num_samples'] = str(
-                                    int(hash_table.get((r.CHROM, pos, gene, allele))['num_samples']) + 1)
-
-                                # we add the LP id in which has been detected the expansion (for extract later on this info)
-                                hash_table[(r.CHROM, pos, gene, allele)]['list_samples'] = \
-                                    hash_table.get((r.CHROM, pos, gene, allele))['list_samples'] \
-                                    + ';' + name_vcf
-
-                            else:
-                                # we add the new alternative allele info
-                                hash_variant['num_samples'] = '1'
-                                hash_variant['list_samples'] = name_vcf
-                                hash_table[(r.CHROM, pos, gene, allele)] = hash_variant
-
-
-                        elif hash_variant.get('gt') == '0/1':
-                            allele_ref = max_ci_allele1
-                            allele_alt = max_ci_allele2
-
-                            if (r.CHROM, pos, gene, allele_ref) in hash_table:
-                                # we add info to an existing key - repeat size allele
-                                hash_table[(r.CHROM, pos, gene, allele_ref)]['num_samples'] = str(
-                                    int(hash_table.get((r.CHROM, pos, gene, allele_ref))['num_samples']) + 1)
-                                hash_table[(r.CHROM, pos, gene, allele_ref)]['list_samples'] = \
-                                    hash_table.get((r.CHROM, pos, gene, allele_ref))['list_samples'] + ';' + name_vcf
-                            else:
-                                # we specify the allele
-                                hash_variant['allele'] = allele_ref
-                                # we add the new alternative allele info
-                                hash_table[(r.CHROM, pos, gene, allele_ref)] = hash_variant
-                            if (r.CHROM, pos, gene, allele_alt) in hash_table:
-                                hash_table[(r.CHROM, pos, gene, allele_alt)]['num_samples'] = str(
-                                    int(hash_table.get((r.CHROM, pos, gene, allele_alt))['num_samples']) + 1)
-                                hash_table[(r.CHROM, pos, gene, allele_alt)]['list_samples'] = \
-                                    hash_table.get((r.CHROM, pos, gene, allele_alt))['list_samples'] + ';' + name_vcf
-                            else:
-                                # we specify the allele
-                                # we create a new hash_variant_alt to have different info (!!)
-                                hash_variant_alt = copy.deepcopy(hash_variant)
-                                hash_variant_alt['allele'] = allele_alt
-                                # we add the new alternative allele info
-                                hash_table[(r.CHROM, pos, gene, allele_alt)] = hash_variant_alt
-
-                        elif hash_variant.get('gt') == '1/2':
-                            allele_alt1 = max_ci_allele1
-                            allele_alt2 = max_ci_allele2
-                            if (r.CHROM, pos, gene, allele_alt1) in hash_table:
-                                # we add info to an existing key - repeat size allele
-                                hash_table[(r.CHROM, pos, gene, allele_alt1)]['num_samples'] = str(
-                                    int(hash_table.get((r.CHROM, pos, gene, allele_alt1))['num_samples']) + 1)
-
-                                # we add the LP id in which has been detected the expansion (for extract later on this info)
-                                hash_table[(r.CHROM, pos, gene, allele_alt1)]['list_samples'] = \
-                                    hash_table.get((r.CHROM, pos, gene, allele_alt1))['list_samples'] + ';' + name_vcf
-
-                            else:
-                                # we specify the allele
-                                hash_variant['allele'] = allele_alt1
-
-                                # we add the new alternative allele info
-                                hash_table[(r.CHROM, pos, gene, allele_alt1)] = hash_variant
-
-                            if (r.CHROM, pos, gene, allele_alt2) in hash_table:
-                                # we add info to an existing key - repeat size allele
-                                hash_table[(r.CHROM, pos, gene, allele_alt2)]['num_samples'] = str(
-                                    int(hash_table.get((r.CHROM, pos, gene, allele_alt2))['num_samples']) + 1)
-
-                                # we add the LP id in which has been detected the expansion (for extract later on this info)
-                                hash_table[(r.CHROM, pos, gene, allele_alt2)]['list_samples'] = \
-                                    hash_table.get((r.CHROM, pos, gene, allele_alt2))['list_samples'] + ';' + name_vcf
-
-                            else:
-                                # we specify the allele
-                                hash_variant_alt = copy.deepcopy(hash_variant)
-                                hash_variant_alt['allele'] = allele_alt2
-
-                                # we add the new alternative allele info
-                                hash_table[(r.CHROM, pos, gene, allele_alt2)] = hash_variant_alt
-            except:
-                raise RuntimeError(
-                    'run_merging_EH_VCF.merging_vcf: Some error has occurred in variant line')
+                        # we add the new alternative allele info
+                        hash_table[(r.CHROM, pos, gene, allele_alt2)] = hash_variant_alt
 
     for key, value in iter(hash_table.items()):
         # we calculate the AF for each STR site (for each alternate allele)
