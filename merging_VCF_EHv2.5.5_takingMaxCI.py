@@ -97,9 +97,6 @@ def merging_vcf(l_vcf, path_vcf, logger):
 
         name_vcf = vcf_input
 
-        if name_vcf == "EH_LP3000113-DNA_D05.vcf":
-            print("kiku")
-
         vcf_input = os.path.join(path_vcf, vcf_input)
 
         if not os.path.isfile(vcf_input):
