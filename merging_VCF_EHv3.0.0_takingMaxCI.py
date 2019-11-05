@@ -163,7 +163,7 @@ def merging_vcf(l_vcf, path_vcf, logger):
                         hash_table[(r.CHROM, pos, gene, allele)] = hash_variant
 
                 elif hash_variant.get('gt') == '1/1':
-                    allele = max_ci_allele2
+                    allele = max_ci_allele1
                     hash_variant['allele'] = allele
 
                     if (r.CHROM, pos, gene, allele) in hash_table:
@@ -183,7 +183,7 @@ def merging_vcf(l_vcf, path_vcf, logger):
                         hash_table[(r.CHROM, pos, gene, allele)] = hash_variant
 
                 elif hash_variant.get('gt') == '1':
-                    allele = max_ci_allele2
+                    allele = max_ci_allele1
                     hash_variant['allele'] = allele
 
                     if (r.CHROM, pos, gene, allele) in hash_table:
