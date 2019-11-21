@@ -1,7 +1,7 @@
 # Calculate the number of `repeatNumber` estimated by EHdn-v0.8.0
 
 # Output folders for EHdn GRCh38
-OUTPUT_PATH_b38=/genomes/scratch/kgarikano/GEL_STR/EHdn/output_EHdnv0.8.0/numberRepeats/GRCh38
+OUTPUT_PATH_b38=/genomes/scratch/kgarikano/GEL_STR/EHdn/output_EHdnv0.8.0/numberRepeats/GRCh38/
 
 # Input folders for EHdn v0.8.0 for GRCh38
 INPUT_PATH_b38=/genomes/scratch/kgarikano/GEL_STR/EHdn/output_EHdnv0.8.0/GRCh38
