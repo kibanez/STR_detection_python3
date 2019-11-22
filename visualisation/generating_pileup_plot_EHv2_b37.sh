@@ -36,11 +36,12 @@ INPUT_FOLDER=/home/dpasko/STRs/research_80K/EH_output_v2.5.5_July2019/
 OUTPUT_FOLDER=/genomes/scratch/kgarikano/GEL_STR/STR_Visualization/random_plots/
 
 # List of the platekeys to generate pileups
-list_ids=/genomes/scratch/kgarikano/GEL_STR/STR_Visualization/list_platekey_EHv2_GRCh37.txt
+list_ids=/genomes/scratch/kgarikano/GEL_STR/STR_Visualization/list_platekey_EHv2.txt
 
 # Locus id
 LOCUS_ID=ATXN1
 
+module load python/3.6.5
 # Load the virtual environment for dependencies
 source /genomes/scratch/kgarikano/GEL_STR/STR_Visualization/GraphAlignmentViewer/venv/bin/activate
 
