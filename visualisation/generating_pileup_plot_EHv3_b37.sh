@@ -30,6 +30,7 @@ list_ids=/genomes/scratch/kgarikano/GEL_STR/STR_Visualization/list_platekey_EHv3
 # Locus id
 LOCUS_ID=ATXN1
 
+module load python/3.6.5
 # Load the virtual environment for dependencies
 source /genomes/scratch/kgarikano/GEL_STR/STR_Visualization/GraphAlignmentViewer/venv/bin/activate
 
@@ -53,7 +54,7 @@ cat ${list_ids} | while read line; do
     --output_prefix ${ID_NAME} \
     --output_dir ${OUTPUT_FOLDER} \
     --dpi 600 \
-    --title_prefix ${ID_NAME}'_pileup' \
+    --title_prefix ${ID_NAME}'_EHv3_pileup' \
     --reference_fasta ${REFERENCE_FASTA} \
     --locus_id ${LOCUS_ID} \
     --file_format v3

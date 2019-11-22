@@ -41,6 +41,7 @@ list_ids=/genomes/scratch/kgarikano/GEL_STR/STR_Visualization/list_platekey_EHv2
 # Locus id
 LOCUS_ID=ATXN1
 
+module load python/3.6.5
 # Load the virtual environment for dependencies
 source /genomes/scratch/kgarikano/GEL_STR/STR_Visualization/GraphAlignmentViewer/venv/bin/activate
 
