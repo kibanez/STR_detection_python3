@@ -14,7 +14,7 @@ GRAPH_SCRIPT=/Users/kibanez/git/GraphAlignmentViewer/GraphAlignmentViewer.py
 # Fasta file with .fai index for reference sequence. If not provided, flanks are set to 'N'. Default: None--reference_fasta REFERENCE_FASTA
 REFERENCE_FASTA=/Users/kibanez/Documents/human_reference/b38/genome.fa
 # Path to variant catalog used to run EH v2
-VARIANT_CATALOG_V2=/Users/kibanez/Documents/STRs/EH/specifications/specs_b38
+VARIANT_CATALOG_V2=/Users/kibanez/Documents/STRs/specs/EHv2.5.5/GRCh38/
 # Input folder where the json/vcf/log or bam files are
 INPUT_FOLDER=/Users/kibanez/Downloads/borratzeko/LP3000209-DNA_G02/
 # Output folder where we want the plots
