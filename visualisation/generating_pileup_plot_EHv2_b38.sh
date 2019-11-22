@@ -21,7 +21,7 @@
 # PyYAML (if visualizing output from versions older than v3) -- pip3.7 install pyyaml
 
 # Path to the binary python file
-GRAPH_SCRIPT=/genomes/scratch/kgarikano/GEL_STR/STR_Visualization/GraphAlignmentViewer/GraphAlignmentViewer.py
+GRAPH_SCRIPT=/genomes/scratch/kgarikano/GEL_STR/Visualisation/GraphAlignmentViewer/GraphAlignmentViewer.py
 
 # Fasta file with .fai index for reference sequence. If not provided, flanks are set to 'N'. Default: None--reference_fasta REFERENCE_FASTA
 REFERENCE_FASTA=/genomes/resources/genomeref/Illumina/Homo_sapiens/NCBI/GRCh38Decoy/Sequence/WholeGenomeFasta/genome.fa
@@ -33,17 +33,20 @@ VARIANT_CATALOG_V2=/genomes/scratch/kgarikano/GEL_STR/specs/EHv2.5.5/GRCh38
 INPUT_FOLDER=/home/dpasko/STRs/research_80K/EH_output_v2.5.5_July2019/
 
 # Output folder where we want the plots
-OUTPUT_FOLDER=/genomes/scratch/kgarikano/GEL_STR/STR_Visualization/random_plots/
+OUTPUT_FOLDER=/genomes/scratch/kgarikano/GEL_STR/Visualisation/random_plots/
 
-# List of the platekeys to generate pileups
-list_ids=/genomes/scratch/kgarikano/GEL_STR/STR_Visualization/list_platekey_EHv2.txt
+# Parameters passing by console
+if [ $# -ne 2 ]
+  then
+    echo "A list with platekeys and LOCUS_ID are required"
+fi
 
-# Locus id
-LOCUS_ID=ATXN1
+list_ids=$1
+LOCUS_ID=$2
 
 module load python/3.6.5
 # Load the virtual environment for dependencies
-source /genomes/scratch/kgarikano/GEL_STR/STR_Visualization/GraphAlignmentViewer/venv/bin/activate
+source /genomes/scratch/kgarikano/GEL_STR/Visualisation/GraphAlignmentViewer/venv/bin/activate
 
 
 mkdir -p ${OUTPUT_FOLDER}
