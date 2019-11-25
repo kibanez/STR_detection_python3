@@ -49,7 +49,7 @@ def print_tables(hash_table, f_output):
     :return:
     """
 
-    l_fields = ['chr', 'start', 'end', 'allele', 'gene', 'ref', 'alt', 'Repeat_Motif',
+    l_fields = ['chr', 'start', 'end', 'repeat-size', 'gene', 'ref', 'alt', 'Repeat_Motif',
                 'num_samples', 'AF', 'list_samples']
 
     l_chr = set([item[0] for item in hash_table.keys()])
@@ -197,7 +197,7 @@ def merging_vcf(l_vcf, path_vcf, logger):
 
                 # From a release we can distinguish between gender, FMR1 and AR. Only 1
                 # allele if the sample is a male
-                elif hash_variant.get('gt') == '1':
+                elif hash_variant.get('gt') == '1' or hash_variant.get('gt') == '0':
                     allele = alt
                     hash_variant['allele'] = allele
 

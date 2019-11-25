@@ -49,7 +49,7 @@ def print_tables(hash_table, f_output):
     :return:
     """
 
-    l_fields = ['chr', 'start', 'end', 'allele', 'gene', 'ref', 'alt', 'Repeat_Motif',
+    l_fields = ['chr', 'start', 'end', 'repeat-size', 'gene', 'ref', 'alt', 'Repeat_Motif',
                 'num_samples', 'AF', 'LC', 'list_samples']
 
     l_chr = set([item[0] for item in hash_table.keys()])
@@ -182,7 +182,7 @@ def merging_vcf(l_vcf, path_vcf, logger):
                         hash_variant['list_samples'] = name_vcf + '_x2'
                         hash_table[(r.CHROM, pos, gene, allele)] = hash_variant
 
-                elif hash_variant.get('gt') == '1':
+                elif hash_variant.get('gt') == '1' or hash_variant.get('gt') == '0':
                     allele = max_ci_allele1
                     hash_variant['allele'] = allele
 
