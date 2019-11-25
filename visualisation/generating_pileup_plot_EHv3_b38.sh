@@ -19,7 +19,7 @@ REFERENCE_FASTA=/genomes/resources/genomeref/Illumina/Homo_sapiens/NCBI/GRCh38De
 VARIANT_CATALOG_V3=/genomes/scratch/kgarikano/GEL_STR/specs/EHv3.1.2/GRCh38/variant_catalog_GRCh38_12oct2019.json
 
 # Input folder where the json/vcf/log or bam files are
-INPUT_FOLDER=/home/dpasko/STRs/research_113K/EH_output_v3.1.2_October2019/
+INPUT_FOLDER=/genomes/scratch/kgarikano/GEL_STR/Validation_golden_table/output_EHv3.1.2/
 
 # Output folder where we want the plots
 OUTPUT_FOLDER=/genomes/scratch/kgarikano/GEL_STR/Visualisation/random_plots/
@@ -49,12 +49,13 @@ cat ${list_ids} | while read line; do
 
     INPUT_BAM=${INPUT_FOLDER}${ID_NAME}'_realigned.bam'
     INPUT_VCF=${INPUT_FOLDER}${ID_NAME}'.vcf'
+    OUTPUT_FILE_NAME=${ID_NAME}'_'${LOCUS_ID}
 
 
     python3 ${GRAPH_SCRIPT} \
     --variant_catalog ${VARIANT_CATALOG_V3} \
     --read_align ${INPUT_BAM} \
-    --output_prefix ${ID_NAME} \
+    --output_prefix ${OUTPUT_FILE_NAME} \
     --output_dir ${OUTPUT_FOLDER} \
     --dpi 600 \
     --title_prefix ${ID_NAME}'_EHv3_pileup' \
