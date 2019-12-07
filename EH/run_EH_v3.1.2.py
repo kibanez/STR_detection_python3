@@ -197,19 +197,13 @@ def run(argv=None):
         logger.info("2 - Detecting the STR for each sample ...")
 
         for lp_id, path in hash_path.iteritems():
-
             gender = hash_gender.get(lp_id)
-
             logger.info("Running EH in %s, path is %s and gender is %s" % (lp_id, path, gender))
-
             # for every chr in each individual we pass it
-
             if path == '.':
                 continue
-
             compute_expansion_hunter_offtarget_reads(eh_path, lp_id, gender, path, fasta_file,
                                                      specs_path, output_path, logger)
-
             logger.info("... finished")
 
         logger.info('Finished running EH algorithm')
