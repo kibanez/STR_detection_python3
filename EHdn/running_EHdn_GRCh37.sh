@@ -1,6 +1,6 @@
 # Bash script to run ExpansionHunter denovo (EHdn) across all genomes aligned with GRCh37 human genome assembly
 
-eh_binary='/genomes/scratch/kgarikano/GEL_STR/sw/latest_EHdn'
+eh_binary='/genomes/scratch/kgarikano/GEL_STR/EHdn/sw/ExpansionHunterDenovo-v0.8.6-linux_x86_64/bin/ExpansionHunterDenovo-v0.8.6'
 reference_fasta='/genomes/resources/genomeref/Illumina/Homo_sapiens/Ensembl/GRCh37/Sequence/WholeGenomeFasta/genome.fa'
 output_folder='/genomes/scratch/kgarikano/GEL_STR/EHdn/output_EHdnv0.8.0/GRCh37'
 
