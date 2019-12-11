@@ -5,14 +5,16 @@ Created on 11/12/2019
 Following EH philosophy we want to merge the repeat-size in each locus across all cohort
 """
 
-import sys
+import copy
+import logging
+import optparse
 import os
 import re
-import optparse
-from os import path as osp
-import pandas as pd
-import logging
+import sys
 import vcf
+from configparser import ConfigParser
+from operator import itemgetter
+from os import path as osp
 
 
 localModulesBase = osp.dirname(osp.realpath(__file__))
@@ -47,7 +49,7 @@ def print_tables(hash_table, f_output):
     :return:
     """
 
-    l_fields = ['chr', 'start', 'end', 'allele', 'gene', 'ref', 'alt', 'Repeat_Motif',
+    l_fields = ['chr', 'repeat-size', 'gene', 'ref', 'alt', 'repeat_motif',
                 'num_samples', 'AF', 'list_samples']
 
     l_chr = set([item[0] for item in hash_table.keys()])
@@ -113,190 +115,134 @@ def merging_vcf(l_vcf, path_vcf, logger):
             hash_fields = dict(r.INFO)
             hash_fields.update(dict(zip(r.samples[0].data._fields, r.samples[0].data)))
 
-            # We want to take the avg value from REPCN field
-            repcn_field = hash_fields.get('REPCN', '0').split('/')
-            alt = repcn_field[0]
-            if len(repcn_field) > 1:
-                alt2 = repcn_field[1]
+            # PERIOD - length of motif
+            motif_length = hash_fields.get('PERIOD', '0')
+            gene = str(r.ID)
+            pos = str(r.POS)
+            ref_allele_size = str(len(str(r.REF)) / motif_length)
+            alt_allele_size = str(len(str(r.ALT).split(',')[0]) / motif_length)
+            if ',' in str(r.ALT):
+                alt2_allele_size = str(len(str(r.ALT).split(',')[1]) / motif_length)
 
-            # We only analyse STR markers >=3 length
-            if len(str(hash_fields.get('RU', 0))) >= 3:
+            hash_variant = {}
+            hash_variant['repeat_motif'] = str(r.REF)[0:motif_length]
+            hash_variant['gene'] = gene
+            hash_variant['gt'] = str(hash_fields.get('GT', ""))
+            hash_variant['chr'] = r.CHROM
+            hash_variant['alt_size'] = str(alt_allele_size)
+            hash_variant['ref_size'] = str(ref_allele_size)
+            hash_variant['num_samples'] = '1'
+            hash_variant['list_samples'] = name_vcf
 
-                pos = str(r.INFO['END'] - 1)
-                gene = str(hash_fields.get('REPID', ""))
+            # Before: each variant consists of CHROM, POS, with the REF and its ALT alleles,
+            # in which alt is not the alternate allele, but the STR repeats
+            # Now: depending on the genotype (GT) we will check which alleles are frequent in our cohort
 
-                # we retrieve all the info contained in the INFO fields
-                hash_variant = {}
+            # We will call `allele` to each allele size detected in each genome
+            # For loci in autosomal chromosomes, we expect to have 2 repeat sizes corresponding to both alleles
+            # For loci in sexual chromosomes, we expect to have 2 repeat size alleles if the genome is female,
+            # or 1 repeat size allele if the genome is male (i.e. FMR1, AR). We take the max value of both
+            # alleles estimation
 
-                hash_variant['Repeat_Motif'] = str(hash_fields.get('RU', 0))
-                hash_variant['Reference_length_bp'] = str(hash_fields.get('RL', 0))
-                hash_variant['gene'] = gene
-                hash_variant['gt'] = str(hash_fields.get('GT', ""))
-                hash_variant['chr'] = r.CHROM
-                hash_variant['start'] = str(r.POS)
-                hash_variant['end'] = str(r.INFO['END'])
-                hash_variant['ref'] = r.REF
-                hash_variant['alt'] = alt
+            if hash_variant.get('gt') == '0|0':
+                allele = ref_allele_size
+                hash_variant['repeat-size'] = allele
 
-                hash_variant['alt_size'] = str(alt)
-                hash_variant['ref_size'] = str(alt2)
-                hash_variant['num_samples'] = '1'
-                hash_variant['list_samples'] = name_vcf
+                if (r.CHROM, pos, gene, allele) in hash_table:
+                    hash_table[(r.CHROM, pos, gene, allele)]['num_samples'] = str(int(hash_table.get((r.CHROM, pos, gene, allele))['num_samples']) + 2)
+                    hash_table[(r.CHROM, pos, gene, allele)]['list_samples'] = \
+                        hash_table.get((r.CHROM, pos, gene, allele))['list_samples'] + ';' + name_vcf + '_x2'
+                else:
+                    hash_variant['num_samples'] = '2'
+                    hash_variant['list_samples'] = name_vcf + '_x2'
+                    hash_table[(r.CHROM, pos, gene, allele)] = hash_variant
 
-                # Before: each variant consists of CHROM, POS, with the REF and its ALT alleles,
-                # in which alt is not the alternate allele, but the STR repeats
-                # Now: depending on the genotype (GT) we will check which alleles are frequent in our cohort
+            elif hash_variant.get('gt') == '1|1':
+                allele = alt_allele_size
+                hash_variant['repeat-size'] = allele
 
-                # We will call `allele` to each allele size detected in each genome
-                # For loci in autosomal chromosomes, we expect to have 2 repeat sizes corresponding to both alleles
-                # For loci in sexual chromosomes, we expect to have 2 repeat size alleles if the genome is female,
-                # or 1 repeat size allele if the genome is male (i.e. FMR1, AR). We take the max value of both
-                # alleles estimation
+                if (r.CHROM, pos, gene, allele) in hash_table:
+                    hash_table[(r.CHROM, pos, gene, allele)]['num_samples'] = str(int(hash_table.get((r.CHROM, pos, gene, allele))['num_samples']) + 2)
+                    hash_table[(r.CHROM, pos, gene, allele)]['list_samples'] = \
+                        hash_table.get((r.CHROM, pos, gene, allele))['list_samples'] + ';' + name_vcf + '_x2'
+                else:
+                    hash_variant['num_samples'] = '2'
+                    hash_variant['list_samples'] = name_vcf + '_x2'
+                    hash_table[(r.CHROM, pos, gene, allele)] = hash_variant
 
-                if hash_variant.get('gt') == '0/0':
-                    allele = alt
-                    hash_variant['allele'] = allele
+            # From a release we can distinguish between gender, FMR1 and AR. Only 1
+            # allele if the sample is a male
+            # HipSTR does not distinguish this but leaving the code anyway...
+            elif hash_variant.get('gt') == '1' or hash_variant.get('gt') == '0':
+                allele = alt_allele_size
+                hash_variant['repeat-size'] = allele
 
-                    if (r.CHROM, pos, gene, allele) in hash_table:
-                        # we add info to an existing key - repeat size allele
-                        hash_table[(r.CHROM, pos, gene, allele)]['num_samples'] = str(int(hash_table.get((r.CHROM, pos, gene, allele))['num_samples']) + 2)
+                if (r.CHROM, pos, gene, allele) in hash_table:
+                    hash_table[(r.CHROM, pos, gene, allele)]['num_samples'] = str(
+                        int(hash_table.get((r.CHROM, pos, gene, allele))['num_samples']) + 1)
+                    hash_table[(r.CHROM, pos, gene, allele)]['list_samples'] = \
+                        hash_table.get((r.CHROM, pos, gene, allele))['list_samples'] \
+                        + ';' + name_vcf
 
-                        # we add the LP id in which has been detected the expansion (for extract later on this info)
-                        hash_table[(r.CHROM, pos, gene, allele)]['list_samples'] = \
-                            hash_table.get((r.CHROM, pos, gene, allele))['list_samples'] + ';' + name_vcf + '_x2'
+                else:
+                    # we add the new alternative allele info
+                    hash_variant['num_samples'] = '1'
+                    hash_variant['list_samples'] = name_vcf
+                    hash_table[(r.CHROM, pos, gene, allele)] = hash_variant
 
-                    else:
-                        # we add the new alternative allele info
-                        hash_variant['num_samples'] = '2'
+            elif hash_variant.get('gt') == '0|1':
+                allele_ref = ref_allele_size
+                allele_alt = alt_allele_size
 
-                        # we update the number of the genome + '_x2)
-                        hash_variant['list_samples'] = name_vcf + '_x2'
+                if (r.CHROM, pos, gene, allele_ref) in hash_table:
+                    hash_table[(r.CHROM, pos, gene, allele_ref)]['num_samples'] = str(
+                        int(hash_table.get((r.CHROM, pos, gene, allele_ref))['num_samples']) + 1)
+                    hash_table[(r.CHROM, pos, gene, allele_ref)]['list_samples'] = \
+                        hash_table.get((r.CHROM, pos, gene, allele_ref))['list_samples'] + ';' + name_vcf
 
-                        hash_table[(r.CHROM, pos, gene, allele)] = hash_variant
+                else:
+                    hash_variant['repeat-size'] = allele_ref
+                    hash_table[(r.CHROM, pos, gene, allele_ref)] = hash_variant
 
-                elif hash_variant.get('gt') == '1/1':
-                    allele = alt
-                    hash_variant['allele'] = allele
+                if (r.CHROM, pos, gene, allele_alt) in hash_table:
+                    hash_table[(r.CHROM, pos, gene, allele_alt)]['num_samples'] = str(
+                        int(hash_table.get((r.CHROM, pos, gene, allele_alt))['num_samples']) + 1)
+                    hash_table[(r.CHROM, pos, gene, allele_alt)]['list_samples'] = \
+                        hash_table.get((r.CHROM, pos, gene, allele_alt))['list_samples'] + ';' + name_vcf
 
-                    if (r.CHROM, pos, gene, allele) in hash_table:
-                        # we add info to an existing key - repeat size allele
-                        hash_table[(r.CHROM, pos, gene, allele)]['num_samples'] = str(int(hash_table.get((r.CHROM, pos, gene, allele))['num_samples']) + 2)
+                else:
+                    hash_variant_alt = copy.deepcopy(hash_variant)
+                    hash_variant_alt['repeat-size'] = allele_alt
+                    hash_table[(r.CHROM, pos, gene, allele_alt)] = hash_variant_alt
 
-                        # we add the LP id in which has been detected the expansion (for extract later on this info)
-                        hash_table[(r.CHROM, pos, gene, allele)]['list_samples'] = \
-                            hash_table.get((r.CHROM, pos, gene, allele))['list_samples'] + ';' + name_vcf + '_x2'
+            elif hash_variant.get('gt') == '1|2':
+                allele_alt1 = alt_allele_size
+                allele_alt2 = alt2_allele_size
 
-                    else:
-                        # we add the new alternative allele info
-                        hash_variant['num_samples'] = '2'
-                        # we update the number of the genome + '_x2)
-                        hash_variant['list_samples'] = name_vcf + '_x2'
-                        hash_table[(r.CHROM, pos, gene, allele)] = hash_variant
+                if (r.CHROM, pos, gene, allele_alt1) in hash_table:
+                    hash_table[(r.CHROM, pos, gene, allele_alt1)]['num_samples'] = str(
+                        int(hash_table.get((r.CHROM, pos, gene, allele_alt1))['num_samples']) + 1)
+                    hash_table[(r.CHROM, pos, gene, allele_alt1)]['list_samples'] = \
+                        hash_table.get((r.CHROM, pos, gene, allele_alt1))['list_samples'] + ';' + name_vcf
+                else:
+                    hash_variant['repeat-size'] = allele_alt1
+                    hash_table[(r.CHROM, pos, gene, allele_alt1)] = hash_variant
 
-                # From a release we can distinguish between gender, FMR1 and AR. Only 1
-                # allele if the sample is a male
-                elif hash_variant.get('gt') == '1' or hash_variant.get('gt') == '0':
-                    allele = alt
-                    hash_variant['allele'] = allele
-
-                    if (r.CHROM, pos, gene, allele) in hash_table:
-                        # we add info to an existing key - repeat size allele
-                        hash_table[(r.CHROM, pos, gene, allele)]['num_samples'] = str(
-                            int(hash_table.get((r.CHROM, pos, gene, allele))['num_samples']) + 1)
-
-                        # we add the LP id in which has been detected the expansion (for extract later on this info)
-                        hash_table[(r.CHROM, pos, gene, allele)]['list_samples'] = \
-                            hash_table.get((r.CHROM, pos, gene, allele))['list_samples'] \
-                            + ';' + name_vcf
-
-                    else:
-                        # we add the new alternative allele info
-                        hash_variant['num_samples'] = '1'
-                        hash_variant['list_samples'] = name_vcf
-                        hash_table[(r.CHROM, pos, gene, allele)] = hash_variant
-
-                elif hash_variant.get('gt') == '0/1':
-                    allele_ref = alt
-                    allele_alt = alt2
-
-                    if (r.CHROM, pos, gene, allele_ref) in hash_table:
-                        # we add info to an existing key - repeat size allele
-                        hash_table[(r.CHROM, pos, gene, allele_ref)]['num_samples'] = str(
-                            int(hash_table.get((r.CHROM, pos, gene, allele_ref))['num_samples']) + 1)
-
-                        # we add the LP id in which has been detected the expansion (for extract later on this info)
-                        hash_table[(r.CHROM, pos, gene, allele_ref)]['list_samples'] = \
-                            hash_table.get((r.CHROM, pos, gene, allele_ref))['list_samples'] + ';' + name_vcf
-
-                    else:
-                        # we specify the allele
-                        hash_variant['allele'] = allele_ref
-
-                        # we add the new alternative allele info
-                        hash_table[(r.CHROM, pos, gene, allele_ref)] = hash_variant
-
-                    if (r.CHROM, pos, gene, allele_alt) in hash_table:
-                        # we add info to an existing key - repeat size allele
-                        hash_table[(r.CHROM, pos, gene, allele_alt)]['num_samples'] = str(
-                            int(hash_table.get((r.CHROM, pos, gene, allele_alt))['num_samples']) + 1)
-
-                        # we add the LP id in which has been detected the expansion (for extract later on this info)
-                        hash_table[(r.CHROM, pos, gene, allele_alt)]['list_samples'] = \
-                            hash_table.get((r.CHROM, pos, gene, allele_alt))['list_samples'] + ';' + name_vcf
-
-                    else:
-                        # we specify the allele
-                        # we create a new hash_variant_alt to have different info (!!)
-                        hash_variant_alt = copy.deepcopy(hash_variant)
-                        hash_variant_alt['allele'] = allele_alt
-
-                        # we add the new alternative allele info
-                        hash_table[(r.CHROM, pos, gene, allele_alt)] = hash_variant_alt
-
-                elif hash_variant.get('gt') == '1/2':
-                    allele_alt1 = alt
-                    allele_alt2 = alt2
-
-                    if (r.CHROM, pos, gene, allele_alt1) in hash_table:
-                        # we add info to an existing key - repeat size allele
-                        hash_table[(r.CHROM, pos, gene, allele_alt1)]['num_samples'] = str(
-                            int(hash_table.get((r.CHROM, pos, gene, allele_alt1))['num_samples']) + 1)
-
-                        # we add the LP id in which has been detected the expansion (for extract later on this info)
-                        hash_table[(r.CHROM, pos, gene, allele_alt1)]['list_samples'] = \
-                            hash_table.get((r.CHROM, pos, gene, allele_alt1))['list_samples'] + ';' + name_vcf
-
-                    else:
-                        # we specify the allele
-                        hash_variant['allele'] = allele_alt1
-
-                        # we add the new alternative allele info
-                        hash_table[(r.CHROM, pos, gene, allele_alt1)] = hash_variant
-
-                    if (r.CHROM, pos, gene, allele_alt2) in hash_table:
-                        # we add info to an existing key - repeat size allele
-                        hash_table[(r.CHROM, pos, gene, allele_alt2)]['num_samples'] = str(
-                            int(hash_table.get((r.CHROM, pos, gene, allele_alt2))['num_samples']) + 1)
-
-                        # we add the LP id in which has been detected the expansion (for extract later on this info)
-                        hash_table[(r.CHROM, pos, gene, allele_alt2)]['list_samples'] = \
-                            hash_table.get((r.CHROM, pos, gene, allele_alt2))['list_samples'] + ';' + name_vcf
-
-                    else:
-                        # we specify the allele
-                        hash_variant_alt = copy.deepcopy(hash_variant)
-                        hash_variant_alt['allele'] = allele_alt2
-
-                        # we add the new alternative allele info
-                        hash_table[(r.CHROM, pos, gene, allele_alt2)] = hash_variant_alt
+                if (r.CHROM, pos, gene, allele_alt2) in hash_table:
+                    hash_table[(r.CHROM, pos, gene, allele_alt2)]['num_samples'] = str(
+                        int(hash_table.get((r.CHROM, pos, gene, allele_alt2))['num_samples']) + 1)
+                    hash_table[(r.CHROM, pos, gene, allele_alt2)]['list_samples'] = \
+                        hash_table.get((r.CHROM, pos, gene, allele_alt2))['list_samples'] + ';' + name_vcf
+                else:
+                    hash_variant_alt = copy.deepcopy(hash_variant)
+                    hash_variant_alt['repeat-size'] = allele_alt2
+                    hash_table[(r.CHROM, pos, gene, allele_alt2)] = hash_variant_alt
 
     for key, value in iter(hash_table.items()):
-        # we calculate the AF for each STR site (for each alternate allele)
         af = float(hash_table.get(key)['num_samples']) / float(total_samples)
         hash_table[key]['AF'] = str(af)
 
     logger.info("Computing the allele frequencies after having digested all the individual VCF files")
-
     return hash_table
 
 
@@ -350,7 +296,7 @@ def run(argv=None):
         sys.exit(0)
 
     if not parser.check_required("--s"):
-        raise IOError('The path to the VCF files generated by running EH is missing')
+        raise IOError('The path to the VCF files generated by running HipSTR is missing')
 
     if not parser.check_required("--o"):
         raise IOError('The merged VCF file is missing')
@@ -363,7 +309,7 @@ def run(argv=None):
         path_samples = options.f_samples
 
         if not os.path.exists(path_samples):
-            raise IOError('The path to the VCF files generated by running EH %s does not exist') \
+            raise IOError('The path to the VCF files generated by running HipSTR %s does not exist') \
                   % path_samples
 
         # Output folder in which the output of EH will be saved
@@ -399,7 +345,7 @@ def run(argv=None):
         l_samples = []
 
         for vcf in l_vcf:
-            sample_name = re.sub('^EH_', '', vcf)
+            sample_name = re.sub('^HipSTR_', '', vcf)
             sample_name = re.sub('.vcf$', '', sample_name)
             l_samples.append(sample_name)
 
