@@ -23,7 +23,7 @@ cat $input_list | while read line; do
         IFS=?~@~Y,?~@~Y read -ra NAMES <<< "$line"
         lp_id=${NAMES[0]}
         path_to_bam=${NAMES[1]}
-        path_to_bam=${path_to_bam}'/Assembly/'${lp_id}'.bam'
+        #path_to_bam=${path_to_bam}'/Assembly/'${lp_id}'.bam'
 
         output_json=${output_folder}'/'${lp_id}'_EHdeNovo'
 
