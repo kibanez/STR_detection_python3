@@ -115,14 +115,23 @@ def merging_vcf(l_vcf, path_vcf, logger):
             hash_fields = dict(r.INFO)
             hash_fields.update(dict(zip(r.samples[0].data._fields, r.samples[0].data)))
 
+            # If there is genotype estimated by HipSTR we follow on, otherwise continue
+            if hash_fields.get('GT') == '.':
+                continue
+
             # PERIOD - length of motif
             motif_length = hash_fields.get('PERIOD', '0')
             gene = str(r.ID)
             pos = str(r.POS)
-            ref_allele_size = str(len(str(r.REF)) / motif_length)
+            start = hash_fields.get('START')
+            end = hash_fields.get('END') + 1
+            ref_allele_size = (end - start) / motif_length
             alt_allele_size = str(len(str(r.ALT).split(',')[0]) / motif_length)
             if ',' in str(r.ALT):
                 alt2_allele_size = str(len(str(r.ALT).split(',')[1]) / motif_length)
+
+            gb_values = list(hash_fields.get('GB', "").split('|'))
+            gb_values = list(map(int, gb_values))
 
             hash_variant = {}
             hash_variant['repeat_motif'] = str(r.REF)[0:motif_length]
@@ -145,7 +154,7 @@ def merging_vcf(l_vcf, path_vcf, logger):
             # alleles estimation
 
             if hash_variant.get('gt') == '0|0':
-                allele = ref_allele_size
+                allele = str(ref_allele_size)
                 hash_variant['repeat-size'] = allele
 
                 if (r.CHROM, pos, gene, allele) in hash_table:
@@ -158,7 +167,7 @@ def merging_vcf(l_vcf, path_vcf, logger):
                     hash_table[(r.CHROM, pos, gene, allele)] = hash_variant
 
             elif hash_variant.get('gt') == '1|1':
-                allele = alt_allele_size
+                allele = str(ref_allele_size + gb_values[0]/motif_length)
                 hash_variant['repeat-size'] = allele
 
                 if (r.CHROM, pos, gene, allele) in hash_table:
@@ -174,6 +183,7 @@ def merging_vcf(l_vcf, path_vcf, logger):
             # allele if the sample is a male
             # HipSTR does not distinguish this but leaving the code anyway...
             elif hash_variant.get('gt') == '1' or hash_variant.get('gt') == '0':
+                print("hemizigosis???")
                 allele = alt_allele_size
                 hash_variant['repeat-size'] = allele
 
@@ -191,8 +201,8 @@ def merging_vcf(l_vcf, path_vcf, logger):
                     hash_table[(r.CHROM, pos, gene, allele)] = hash_variant
 
             elif hash_variant.get('gt') == '0|1':
-                allele_ref = ref_allele_size
-                allele_alt = alt_allele_size
+                allele_ref = str(ref_allele_size)
+                allele_alt = str(int(ref_allele_size) + gb_values[1]/motif_length)
 
                 if (r.CHROM, pos, gene, allele_ref) in hash_table:
                     hash_table[(r.CHROM, pos, gene, allele_ref)]['num_samples'] = str(
@@ -216,8 +226,8 @@ def merging_vcf(l_vcf, path_vcf, logger):
                     hash_table[(r.CHROM, pos, gene, allele_alt)] = hash_variant_alt
 
             elif hash_variant.get('gt') == '1|2':
-                allele_alt1 = alt_allele_size
-                allele_alt2 = alt2_allele_size
+                allele_alt1 = str(int(ref_allele_size) + gb_values[0]/motif_length)
+                allele_alt2 = str(int(ref_allele_size) + gb_values[1]/motif_length)
 
                 if (r.CHROM, pos, gene, allele_alt1) in hash_table:
                     hash_table[(r.CHROM, pos, gene, allele_alt1)]['num_samples'] = str(
