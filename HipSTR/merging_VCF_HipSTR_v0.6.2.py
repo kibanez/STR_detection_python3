@@ -49,7 +49,7 @@ def print_tables(hash_table, f_output):
     :return:
     """
 
-    l_fields = ['chr', 'repeat-size', 'gene', 'ref', 'alt', 'repeat_motif',
+    l_fields = ['chr', 'repeat-size', 'gene', 'repeat_motif',
                 'num_samples', 'AF', 'list_samples']
 
     l_chr = set([item[0] for item in hash_table.keys()])
@@ -119,13 +119,17 @@ def merging_vcf(l_vcf, path_vcf, logger):
             if hash_fields.get('GT') == '.':
                 continue
 
+            if vcf_input == \
+                    "/Users/kibanez/Documents/STRs/ANALYSIS/population_research/HipSTR/output_HipSTR/HipSTR_output_58971_vcfs/AFR/HipSTR_LP3000874-DNA_C04.vcf":
+                print("KIKI")
+
             # PERIOD - length of motif
             motif_length = hash_fields.get('PERIOD', '0')
             gene = str(r.ID)
-            pos = str(r.POS)
             start = hash_fields.get('START')
+            pos = start
             end = hash_fields.get('END') + 1
-            ref_allele_size = (end - start) / motif_length
+            ref_allele_size = int((end - start) / motif_length)
             alt_allele_size = str(len(str(r.ALT).split(',')[0]) / motif_length)
             if ',' in str(r.ALT):
                 alt2_allele_size = str(len(str(r.ALT).split(',')[1]) / motif_length)
@@ -134,12 +138,12 @@ def merging_vcf(l_vcf, path_vcf, logger):
             gb_values = list(map(int, gb_values))
 
             hash_variant = {}
-            hash_variant['repeat_motif'] = str(r.REF)[0:motif_length]
-            hash_variant['gene'] = gene
-            hash_variant['gt'] = str(hash_fields.get('GT', ""))
             hash_variant['chr'] = r.CHROM
-            hash_variant['alt_size'] = str(alt_allele_size)
-            hash_variant['ref_size'] = str(ref_allele_size)
+            hash_variant['gene'] = gene
+            hash_variant['repeat_motif'] = str(r.REF)[0:motif_length]
+            hash_variant['gt'] = str(hash_fields.get('GT', ""))
+            #hash_variant['alt_size'] = str(alt_allele_size)
+            #hash_variant['ref_size'] = str(ref_allele_size)
             hash_variant['num_samples'] = '1'
             hash_variant['list_samples'] = name_vcf
 
@@ -167,7 +171,7 @@ def merging_vcf(l_vcf, path_vcf, logger):
                     hash_table[(r.CHROM, pos, gene, allele)] = hash_variant
 
             elif hash_variant.get('gt') == '1|1':
-                allele = str(ref_allele_size + gb_values[0]/motif_length)
+                allele = str(ref_allele_size + int(gb_values[0]/motif_length))
                 hash_variant['repeat-size'] = allele
 
                 if (r.CHROM, pos, gene, allele) in hash_table:
@@ -200,9 +204,9 @@ def merging_vcf(l_vcf, path_vcf, logger):
                     hash_variant['list_samples'] = name_vcf
                     hash_table[(r.CHROM, pos, gene, allele)] = hash_variant
 
-            elif hash_variant.get('gt') == '0|1':
+            elif hash_variant.get('gt') == '0|1' or hash_variant.get('gt') == '1|0':
                 allele_ref = str(ref_allele_size)
-                allele_alt = str(int(ref_allele_size) + gb_values[1]/motif_length)
+                allele_alt = str(int(ref_allele_size) + int(gb_values[1]/motif_length))
 
                 if (r.CHROM, pos, gene, allele_ref) in hash_table:
                     hash_table[(r.CHROM, pos, gene, allele_ref)]['num_samples'] = str(
@@ -225,9 +229,9 @@ def merging_vcf(l_vcf, path_vcf, logger):
                     hash_variant_alt['repeat-size'] = allele_alt
                     hash_table[(r.CHROM, pos, gene, allele_alt)] = hash_variant_alt
 
-            elif hash_variant.get('gt') == '1|2':
-                allele_alt1 = str(int(ref_allele_size) + gb_values[0]/motif_length)
-                allele_alt2 = str(int(ref_allele_size) + gb_values[1]/motif_length)
+            elif hash_variant.get('gt') == '1|2' or hash_variant.get('gt') == '2|1':
+                allele_alt1 = str(int(ref_allele_size) + int(gb_values[0]/motif_length))
+                allele_alt2 = str(int(ref_allele_size) + int(gb_values[1]/motif_length))
 
                 if (r.CHROM, pos, gene, allele_alt1) in hash_table:
                     hash_table[(r.CHROM, pos, gene, allele_alt1)]['num_samples'] = str(
