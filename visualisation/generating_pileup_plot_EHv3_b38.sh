@@ -25,13 +25,12 @@ INPUT_FOLDER=/genomes/scratch/kgarikano/GEL_STR/Validation_golden_table/output_E
 OUTPUT_FOLDER=/genomes/scratch/kgarikano/GEL_STR/Visualisation/random_plots/
 
 # Parameters passing by console
-if [ $# -ne 2 ]
+if [ $# -ne 1 ]
   then
-    echo "A list with platekeys and LOCUS_ID are required"
+    echo "A list with platekeys together with LOCUS_ID is required (separated by commas)"
 fi
 
-list_ids=$1
-LOCUS_ID=$2
+FILE_INPUT=$1
 
 module load python/3.6.5
 # Load the virtual environment for dependencies
@@ -42,15 +41,16 @@ mkdir -p ${OUTPUT_FOLDER}
 cd ${OUTPUT_FOLDER}
 
 
-cat ${list_ids} | while read line; do
+while read line; do
 
    IFS=?~@~Y,?~@~Y read -ra NAMES <<< "$line"
     ID_NAME='EH_'${NAMES[0]}
+    LOCUS_ID=${NAMES[1]}
 
     INPUT_BAM=${INPUT_FOLDER}${ID_NAME}'_realigned.bam'
     INPUT_VCF=${INPUT_FOLDER}${ID_NAME}'.vcf'
-    OUTPUT_FILE_NAME=${ID_NAME}'_'${LOCUS_ID}
 
+    OUTPUT_FILE_NAME=${ID_NAME}'_'${LOCUS_ID}
 
     python3 ${GRAPH_SCRIPT} \
     --variant_catalog ${VARIANT_CATALOG_V3} \
@@ -63,4 +63,5 @@ cat ${list_ids} | while read line; do
     --locus_id ${LOCUS_ID} \
     --file_format v3
 
-done
+                                                                                                                                                                             68,0-1        97%
+done <${FILE_INPUT}

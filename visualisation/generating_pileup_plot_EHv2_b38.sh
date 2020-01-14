@@ -33,16 +33,15 @@ VARIANT_CATALOG_V2=/genomes/scratch/kgarikano/GEL_STR/specs/EHv2.5.5/GRCh38
 INPUT_FOLDER=/home/dpasko/STRs/research_80K/EH_output_v2.5.5_July2019/
 
 # Output folder where we want the plots
-OUTPUT_FOLDER=/genomes/scratch/kgarikano/GEL_STR/Visualisation/random_plots/
+OUTPUT_FOLDER=/genomes/scratch/kgarikano/GEL_STR/Visualisation/paper_positive/EHv2
 
 # Parameters passing by console
-if [ $# -ne 2 ]
+if [ $# -ne 1 ]
   then
-    echo "A list with platekeys and LOCUS_ID are required"
+    echo "A list with platekeys together with LOCUS_ID are required, separated by comma"
 fi
 
 list_ids=$1
-LOCUS_ID=$2
 
 module load python/3.6.5
 # Load the virtual environment for dependencies
@@ -57,15 +56,16 @@ cat ${list_ids} | while read line; do
 
    IFS=?~@~Y,?~@~Y read -ra NAMES <<< "$line"
     ID_NAME='EH_'${NAMES[0]}
+    LOCUS_ID=${NAMES[1]}
 
     INPUT_BAM=${INPUT_FOLDER}${ID_NAME}'_alignments_relevant_reads.log'
     INPUT_VCF=${INPUT_FOLDER}${ID_NAME}'.vcf'
 
 
-	python3 ${GRAPH_SCRIPT} \
-	  --variant_catalog ${VARIANT_CATALOG_V2} \
-	  --read_align ${INPUT_BAM} \
-	  --gt_file ${INPUT_VCF} \
+    python3 ${GRAPH_SCRIPT} \
+    --variant_catalog ${VARIANT_CATALOG_V2} \
+    --read_align ${INPUT_BAM} \
+    --gt_file ${INPUT_VCF} \
     --output_prefix ${ID_NAME} \
     --output_dir ${OUTPUT_FOLDER} \
     --dpi 600 \

@@ -62,10 +62,10 @@ cat ${list_ids} | while read line; do
     INPUT_VCF=${INPUT_FOLDER}${ID_NAME}'.vcf'
 
 
-	python3 ${GRAPH_SCRIPT} \
-	  --variant_catalog ${VARIANT_CATALOG_V2} \
-	  --read_align ${INPUT_BAM} \
-	  --gt_file ${INPUT_VCF} \
+    python3 ${GRAPH_SCRIPT} \
+    --variant_catalog ${VARIANT_CATALOG_V2} \
+    --read_align ${INPUT_BAM} \
+    --gt_file ${INPUT_VCF} \
     --output_prefix ${ID_NAME} \
     --output_dir ${OUTPUT_FOLDER} \
     --dpi 600 \
