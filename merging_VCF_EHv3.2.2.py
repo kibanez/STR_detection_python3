@@ -115,6 +115,11 @@ def merging_vcf(l_vcf, path_vcf, logger):
             hash_fields = dict(r.INFO)
             hash_fields.update(dict(zip(r.samples[0].data._fields, r.samples[0].data)))
 
+            # From EHv3.2.2 on there is a new FILTER called `LowDepth`
+            # If so, we continue, since we do not have estimation
+            if r.FILTER == ['LowDepth']:
+                continue
+
             # We want to take the avg value from REPCN field
             repcn_field = hash_fields.get('REPCN', '0').split('/')
             alt = repcn_field[0]
