@@ -15,7 +15,7 @@ def print_tables(hash_table, f_output):
     :return:
     """
 
-    l_fields = ['rsid', 'chr', 'ref', 'alt', '1kG_phase3_ALL']
+    l_fields = ['chr', 'start', 'ref', 'alt', '1kG_phase3_ALL']
 
     l_chr = set([item[0] for item in hash_table.keys()])
 
@@ -42,7 +42,7 @@ def print_tables(hash_table, f_output):
 
 # Read input JSON
 annotFile = sys.argv[1]
-outFile = open(sys.argv[2], 'w')
+outFile = sys.argv[2]
 
 # Parse JSON
 hash_table = {}
@@ -57,8 +57,9 @@ with open(annotFile) as f:
                   annot["annotation"]["reference"] + "\t" + annot["annotation"]["alternate"]
 
         # Principal keys
-        rsid = str(annot['id'])
+        #rsid = str(annot['id'])
         chr = str(annot['chromosome'])
+        start = str(annot['start'])
         ref = str(annot['reference'])
         alt = str(annot['alternate'])
 
@@ -69,11 +70,11 @@ with open(annotFile) as f:
                     hash_variant['1kG_phase3_ALL'] = str(pf["altAlleleFreq"])
                 else:
                     noStudy = "NO_STUDY"
-            if hash_variant['1kG_phase3_ALL'] == "" and noStudy != "":
+            if noStudy != "":
                 hash_variant['1kG_phase3_ALL'] = noStudy
 #        else:
 #            outLine += "\t" + "NOT_ANNOTATED"
-        hash_table[rsid, chr, ref, alt] = hash_variant
+        hash_table[(chr, start, ref, alt)] = hash_variant
 
 # Writing down hash_table into a file
     print_tables(hash_table, outFile)
