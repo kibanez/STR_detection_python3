@@ -20,7 +20,8 @@ def print_tables(hash_table, f_output):
                 'GNOMAD_GENOMES_ALL', 'GNOMAD_GENOMES_AFR', 'GNOMAD_GENOMES_AMR', 'GNOMAD_GENOMES_EAS',
                 'GNOMAD_GENOMES_NFE', 'GNOMAD_GENOMES_FIN', 'GNOMAD_GENOMES_FEMALE', 'GNOMAD_GENOMES_MALE',
                 '1kG_phase3_ALL', '1kG_phase3_SAS', '1kG_phase3_AFR', '1kG_phase3_EUR', '1kG_phase3_AMR',
-                '1kG_phase3_EAS', 'UK10K_ALL', 'UK10K_TWINSUK_NODUP', 'UK10K_TWINSUK', 'ALSPAC']
+                '1kG_phase3_EAS', 'UK10K_ALL', 'UK10K_TWINSUK_NODUP', 'UK10K_TWINSUK', 'ALSPAC',
+                'HGMD_version', 'HGMD_ID', 'HGMD_PHEN', "HGMD_CLASS", "HGMD_MUT"]
 
     l_chr = set([item[0] for item in hash_table.keys()])
 
@@ -129,6 +130,23 @@ with open(annotFile) as f:
                     elif pf["population"] == "ALSPAC":
                         hash_variant['ALSPAC'] = str(pf["altAlleleFreq"])
 
+        if "additionalAttributes" in annot["annotation"]:
+            if "HGMD.2015.4" in annot["annotation"]["additionalAttributes"]:
+                hash_variant["HGMD_version"] = "HGMD.2015.4"
+                hash_variant["HGMD_ID"] = \
+                    annot["annotation"]["additionalAttributes"]["HGMD.2015.4"]["attribute"]["HGMD_IDs"]
+                hash_variant["HGMD_PHEN"] = \
+                    annot["annotation"]["additionalAttributes"]["HGMD.2015.4"]["attribute"]["PHEN"]
+                hash_variant["HGMD_CLASS"] = \
+                    annot["annotation"]["additionalAttributes"]["HGMD.2015.4"]["attribute"]["CLASS"]
+                hash_variant["HGMD_MUT"] = \
+                    annot["annotation"]["additionalAttributes"]["HGMD.2015.4"]["attribute"]["MUT"]
+            else:
+                hash_variant["HGMD_version"] = "HGMD.2015.4"
+                hash_variant["HGMD_ID"] = '.'
+                hash_variant["HGMD_PHEN"] = '.'
+                hash_variant["HGMD_CLASS"] = '.'
+                hash_variant["HGMD_MUT"] = '.'
 
         hash_table[(chr, start, ref, alt)] = hash_variant
 
