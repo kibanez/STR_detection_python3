@@ -16,7 +16,7 @@ def print_tables(hash_table, f_output):
     """
 
     l_fields = ['chr', 'start', 'ref', 'alt', 'type', 'rsid', 'consequenceType',
-                'type', 'rsid', 'consequenceType', 'GEL.GL.5277', 'GEL.Platypus.RD.1777',
+                'GEL.GL.5277', 'GEL.Platypus.RD.1777',
                 'GNOMAD_GENOMES_ALL', 'GNOMAD_GENOMES_AFR', 'GNOMAD_GENOMES_AMR', 'GNOMAD_GENOMES_EAS',
                 'GNOMAD_GENOMES_NFE', 'GNOMAD_GENOMES_FIN', 'GNOMAD_GENOMES_FEMALE', 'GNOMAD_GENOMES_MALE',
                 '1kG_phase3_ALL', '1kG_phase3_SAS', '1kG_phase3_AFR', '1kG_phase3_EUR', '1kG_phase3_AMR',
@@ -73,7 +73,7 @@ with open(annotFile) as f:
         hash_variant['start'] = start
         hash_variant['ref'] = ref
         hash_variant['alt'] = alt
-        hash_variant['type'] = annot["type"]
+        hash_variant['type'] = annot.get("type", ".")
         hash_variant['rsid'] = annot.get('id', ".")
 
         if "additionalAttributes" in annot["annotation"]:
