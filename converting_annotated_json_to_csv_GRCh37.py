@@ -16,12 +16,13 @@ def print_tables(hash_table, f_output):
     """
 
     l_fields = ['chr', 'start', 'ref', 'alt', 'type', 'rsid', 'consequenceType',
-                'GEL.GL.5277', 'GEL.Platypus.RD.1777',
+                'GEL_GL_6628', 'GEL.Platypus.RD.1777',
                 'GNOMAD_GENOMES_ALL', 'GNOMAD_GENOMES_AFR', 'GNOMAD_GENOMES_AMR', 'GNOMAD_GENOMES_EAS',
                 'GNOMAD_GENOMES_NFE', 'GNOMAD_GENOMES_FIN', 'GNOMAD_GENOMES_FEMALE', 'GNOMAD_GENOMES_MALE',
                 '1kG_phase3_ALL', '1kG_phase3_SAS', '1kG_phase3_AFR', '1kG_phase3_EUR', '1kG_phase3_AMR',
                 '1kG_phase3_EAS', 'UK10K_ALL', 'UK10K_TWINSUK_NODUP', 'UK10K_TWINSUK', 'ALSPAC',
-                'HGMD_version', 'HGMD_ID', 'HGMD_PHEN', "HGMD_CLASS", "HGMD_MUT"]
+                'HGMD_version', 'HGMD_ID', 'HGMD_PHEN', "HGMD_CLASS", "HGMD_MUT",
+                "HGMD_GENE", "HGMD_DNA", "HGMD_PROT", "HGMD_DB"]
 
     l_chr = set([item[0] for item in hash_table.keys()])
 
@@ -77,9 +78,9 @@ with open(annotFile) as f:
         hash_variant['rsid'] = annot.get('id', ".")
 
         if "additionalAttributes" in annot["annotation"]:
-            if "GEL.GL.5277" in annot["annotation"]["additionalAttributes"]:
-                hash_variant['GEL.GL.5277'] = \
-                    annot["annotation"]["additionalAttributes"]["GEL.GL.5277"]["attribute"]["AF"]
+            if "GEL_GL_6628" in annot["annotation"]["additionalAttributes"]:
+                hash_variant['GEL_GL_6628'] = \
+                    annot["annotation"]["additionalAttributes"]["GEL_GL_6628"]["attribute"]["AF"]
             if "GEL.Platypus.RD.1777" in annot["annotation"]["additionalAttributes"]:
                 hash_variant['GEL.Platypus.RD.1777'] = \
                     annot["annotation"]["additionalAttributes"]["GEL.Platypus.RD.1777"]['attribute']['AF']
@@ -129,24 +130,53 @@ with open(annotFile) as f:
                         hash_variant['UK10K_TWINSUK'] = str(pf["altAlleleFreq"])
                     elif pf["population"] == "ALSPAC":
                         hash_variant['ALSPAC'] = str(pf["altAlleleFreq"])
-
         if "additionalAttributes" in annot["annotation"]:
-            if "HGMD.2015.4" in annot["annotation"]["additionalAttributes"]:
-                hash_variant["HGMD_version"] = "HGMD.2015.4"
+            if "HGMD_2018" in annot["annotation"]["additionalAttributes"]:
+                hash_variant["HGMD_version"] = "HGMD_2018"
+
+
+
                 hash_variant["HGMD_ID"] = \
-                    annot["annotation"]["additionalAttributes"]["HGMD.2015.4"]["attribute"]["HGMD_IDs"]
+                    annot.get("annotation").get("additionalAttributes").get("HGMD_2018").get("attribute").get("HGMD_IDs",
+                                                                                                              '.')
                 hash_variant["HGMD_PHEN"] = \
-                    annot["annotation"]["additionalAttributes"]["HGMD.2015.4"]["attribute"]["PHEN"]
+                    annot.get("annotation").get("additionalAttributes").get("HGMD_2018").get("attribute").get(
+                        "PHEN",
+                        '.')
                 hash_variant["HGMD_CLASS"] = \
-                    annot["annotation"]["additionalAttributes"]["HGMD.2015.4"]["attribute"]["CLASS"]
+                    annot.get("annotation").get("additionalAttributes").get("HGMD_2018").get("attribute").get(
+                        "HGMD_CLASS",
+                        '.')
                 hash_variant["HGMD_MUT"] = \
-                    annot["annotation"]["additionalAttributes"]["HGMD.2015.4"]["attribute"]["MUT"]
+                    annot.get("annotation").get("additionalAttributes").get("HGMD_2018").get("attribute").get(
+                        "MUT",
+                        '.')
+                hash_variant["HGMD_GENE"] = \
+                    annot.get("annotation").get("additionalAttributes").get("HGMD_2018").get("attribute").get(
+                        "GENE",
+                        '.')
+                hash_variant["HGMD_DNA"] = \
+                    annot.get("annotation").get("additionalAttributes").get("HGMD_2018").get("attribute").get(
+                        "DNA",
+                        '.')
+                hash_variant["HGMD_PROT"] = \
+                    annot.get("annotation").get("additionalAttributes").get("HGMD_2018").get("attribute").get(
+                        "PROT",
+                        '.')
+                hash_variant["HGMD_DB"] = \
+                    annot.get("annotation").get("additionalAttributes").get("HGMD_2018").get("attribute").get(
+                        "DB",
+                        '.')
             else:
-                hash_variant["HGMD_version"] = "HGMD.2015.4"
+                hash_variant["HGMD_version"] = "HGMD_2018"
                 hash_variant["HGMD_ID"] = '.'
                 hash_variant["HGMD_PHEN"] = '.'
                 hash_variant["HGMD_CLASS"] = '.'
                 hash_variant["HGMD_MUT"] = '.'
+                hash_variant["HGMD_GENE"] = '.'
+                hash_variant["HGMD_DNA"] = '.'
+                hash_variant["HGMD_PROT"] = '.'
+                hash_variant["HGMD_DB"] = '.'
 
         hash_table[(chr, start, ref, alt)] = hash_variant
 
