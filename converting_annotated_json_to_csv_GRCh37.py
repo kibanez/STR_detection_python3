@@ -1,3 +1,4 @@
+import string
 import json
 import sys
 from operator import itemgetter
@@ -64,10 +65,10 @@ with open(annotFile) as f:
                   annot["annotation"]["reference"] + "\t" + annot["annotation"]["alternate"]
 
         # Principal keys
-        chr = str(annot['chromosome'])
-        start = str(annot['start'])
-        ref = str(annot['reference'])
-        alt = str(annot['alternate'])
+        chr = str(annot.get('chromosome', '.'))
+        start = str(annot.get('start', '.'))
+        ref = str(annot.get('reference', '.'))
+        alt = str(annot.get('alternate', '.'))
 
         # Include single information
         hash_variant['chr'] = chr
@@ -76,14 +77,18 @@ with open(annotFile) as f:
         hash_variant['alt'] = alt
         hash_variant['type'] = annot.get("type", ".")
         hash_variant['rsid'] = annot.get('id', ".")
+        # Substitute any , in rsid by ;
+        hash_variant['rsid'] = hash_variant['rsid'].replace(",", ";")
 
         if "additionalAttributes" in annot["annotation"]:
             if "GEL_GL_6628" in annot["annotation"]["additionalAttributes"]:
-                hash_variant['GEL_GL_6628'] = \
-                    annot["annotation"]["additionalAttributes"]["GEL_GL_6628"]["attribute"]["AF"]
+                hash_variant['GEL.GL.5277'] = \
+                    annot.get("annotation").get("additionalAttributes").get("GEL.GL.5277").get("attribute").get(
+                        "AF", '.')
             if "GEL.Platypus.RD.1777" in annot["annotation"]["additionalAttributes"]:
                 hash_variant['GEL.Platypus.RD.1777'] = \
-                    annot["annotation"]["additionalAttributes"]["GEL.Platypus.RD.1777"]['attribute']['AF']
+                    annot.get("annotation").get("additionalAttributes").get("GEL.Platypus.RD.1777").get('attribute').get(
+                        'AF', '.')
         else:
             hash_variant['GEL.GL.5277'] = '.'
             hash_variant['GEL.Platypus.RD.1777'] = '.'
@@ -93,82 +98,79 @@ with open(annotFile) as f:
             for pf in annot["annotation"]["populationFrequencies"]:
                 if pf["study"] == "GNOMAD_GENOMES":
                     if pf["population"] == "ALL":
-                        hash_variant['GNOMAD_GENOMES_ALL'] = str(pf["altAlleleFreq"])
+                        hash_variant['GNOMAD_GENOMES_ALL'] = str(pf.get("altAlleleFreq", '.'))
                     elif pf["population"] == "AFR":
-                        hash_variant['GNOMAD_GENOMES_AFR'] = str(pf["altAlleleFreq"])
+                        hash_variant['GNOMAD_GENOMES_AFR'] = str(pf.get("altAlleleFreq", '.'))
                     elif pf["population"] == "AMR":
-                        hash_variant['GNOMAD_GENOMES_AMR'] = str(pf["altAlleleFreq"])
+                        hash_variant['GNOMAD_GENOMES_AMR'] = str(pf.get("altAlleleFreq", '.'))
                     elif pf["population"] == "EAS":
-                        hash_variant['GNOMAD_GENOMES_EAS'] = str(pf["altAlleleFreq"])
+                        hash_variant['GNOMAD_GENOMES_EAS'] = str(pf.get("altAlleleFreq", '.'))
                     elif pf["population"] == "NFE":
-                        hash_variant['GNOMAD_GENOMES_NFE'] = str(pf["altAlleleFreq"])
+                        hash_variant['GNOMAD_GENOMES_NFE'] = str(pf.get("altAlleleFreq", '.'))
                     elif pf["population"] == "FIN":
-                        hash_variant['GNOMAD_GENOMES_FIN'] = str(pf["altAlleleFreq"])
+                        hash_variant['GNOMAD_GENOMES_FIN'] = str(pf.get("altAlleleFreq", '.'))
                     elif pf["population"] == "FEMALE":
-                        hash_variant['GNOMAD_GENOMES_FEMALE'] = str(pf["altAlleleFreq"])
+                        hash_variant['GNOMAD_GENOMES_FEMALE'] = str(pf.get("altAlleleFreq", '.'))
                     elif pf["population"] == "MALE":
-                        hash_variant['GNOMAD_GENOMES_MALE'] = str(pf["altAlleleFreq"])
+                        hash_variant['GNOMAD_GENOMES_MALE'] = str(pf.get("altAlleleFreq", '.'))
                 elif pf["study"] == "1kG_phase3":
                     if pf["population"] == "ALL":
-                        hash_variant['1kG_phase3_ALL'] = str(pf["altAlleleFreq"])
+                        hash_variant['1kG_phase3_ALL'] = str(pf.get("altAlleleFreq", '.'))
                     elif pf["population"] == "SAS":
-                        hash_variant['1kG_phase3_SAS'] = str(pf["altAlleleFreq"])
+                        hash_variant['1kG_phase3_SAS'] = str(pf.get("altAlleleFreq", '.'))
                     elif pf["population"] == "AFR":
-                        hash_variant['1kG_phase3_AFR'] = str(pf["altAlleleFreq"])
+                        hash_variant['1kG_phase3_AFR'] = str(pf.get("altAlleleFreq", '.'))
                     elif pf["population"] == "EUR":
-                        hash_variant['1kG_phase3_EUR'] = str(pf["altAlleleFreq"])
+                        hash_variant['1kG_phase3_EUR'] = str(pf.get("altAlleleFreq", '.'))
                     elif pf["population"] == "AMR":
-                        hash_variant['1kG_phase3_AMR'] = str(pf["altAlleleFreq"])
+                        hash_variant['1kG_phase3_AMR'] = str(pf.get("altAlleleFreq", '.'))
                     elif pf["population"] == "EAS":
-                        hash_variant['1kG_phase3_EAS'] = str(pf["altAlleleFreq"])
+                        hash_variant['1kG_phase3_EAS'] = str(pf.get("altAlleleFreq", '.'))
                 elif pf["study"] == "UK10K":
                     if pf["population"] == "ALL":
-                        hash_variant['UK10K_ALL'] = str(pf["altAlleleFreq"])
+                        hash_variant['UK10K_ALL'] = str(pf.get("altAlleleFreq", '.'))
                     elif pf["population"] == "TWINSUK_NODUP":
-                        hash_variant['UK10K_TWINSUK_NODUP'] = str(pf["altAlleleFreq"])
+                        hash_variant['UK10K_TWINSUK_NODUP'] = str(pf.get("altAlleleFreq", '.'))
                     elif pf["population"] == "TWINSUK":
-                        hash_variant['UK10K_TWINSUK'] = str(pf["altAlleleFreq"])
+                        hash_variant['UK10K_TWINSUK'] = str(pf.get("altAlleleFreq", '.'))
                     elif pf["population"] == "ALSPAC":
-                        hash_variant['ALSPAC'] = str(pf["altAlleleFreq"])
+                        hash_variant['ALSPAC'] = str(pf.get("altAlleleFreq", '.'))
         if "additionalAttributes" in annot["annotation"]:
-            if "HGMD_2018" in annot["annotation"]["additionalAttributes"]:
-                hash_variant["HGMD_version"] = "HGMD_2018"
-
-
-
+            if "HGMD.2015.4" in annot["annotation"]["additionalAttributes"]:
+                hash_variant["HGMD_version"] = "HGMD_2015_4"
                 hash_variant["HGMD_ID"] = \
-                    annot.get("annotation").get("additionalAttributes").get("HGMD_2018").get("attribute").get("HGMD_IDs",
+                    annot.get("annotation").get("additionalAttributes").get("HGMD.2015.4").get("attribute").get("HGMD_IDs",
                                                                                                               '.')
                 hash_variant["HGMD_PHEN"] = \
-                    annot.get("annotation").get("additionalAttributes").get("HGMD_2018").get("attribute").get(
+                    annot.get("annotation").get("additionalAttributes").get("HGMD.2015.4").get("attribute").get(
                         "PHEN",
                         '.')
                 hash_variant["HGMD_CLASS"] = \
-                    annot.get("annotation").get("additionalAttributes").get("HGMD_2018").get("attribute").get(
+                    annot.get("annotation").get("additionalAttributes").get("HGMD.2015.4").get("attribute").get(
                         "HGMD_CLASS",
                         '.')
                 hash_variant["HGMD_MUT"] = \
-                    annot.get("annotation").get("additionalAttributes").get("HGMD_2018").get("attribute").get(
+                    annot.get("annotation").get("additionalAttributes").get("HGMD.2015.4").get("attribute").get(
                         "MUT",
                         '.')
                 hash_variant["HGMD_GENE"] = \
-                    annot.get("annotation").get("additionalAttributes").get("HGMD_2018").get("attribute").get(
+                    annot.get("annotation").get("additionalAttributes").get("HGMD.2015.4").get("attribute").get(
                         "GENE",
                         '.')
                 hash_variant["HGMD_DNA"] = \
-                    annot.get("annotation").get("additionalAttributes").get("HGMD_2018").get("attribute").get(
+                    annot.get("annotation").get("additionalAttributes").get("HGMD.2015.4").get("attribute").get(
                         "DNA",
                         '.')
                 hash_variant["HGMD_PROT"] = \
-                    annot.get("annotation").get("additionalAttributes").get("HGMD_2018").get("attribute").get(
+                    annot.get("annotation").get("additionalAttributes").get("HGMD.2015.4").get("attribute").get(
                         "PROT",
                         '.')
                 hash_variant["HGMD_DB"] = \
-                    annot.get("annotation").get("additionalAttributes").get("HGMD_2018").get("attribute").get(
+                    annot.get("annotation").get("additionalAttributes").get("HGMD.2015.4").get("attribute").get(
                         "DB",
                         '.')
             else:
-                hash_variant["HGMD_version"] = "HGMD_2018"
+                hash_variant["HGMD_version"] = "HGMD.2015.4"
                 hash_variant["HGMD_ID"] = '.'
                 hash_variant["HGMD_PHEN"] = '.'
                 hash_variant["HGMD_CLASS"] = '.'
