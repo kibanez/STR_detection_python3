@@ -17,7 +17,7 @@ def print_tables(hash_table, f_output):
     """
 
     l_fields = ['chr', 'start', 'ref', 'alt', 'type', 'rsid', 'consequenceType',
-                'GEL_GL_6628', 'GEL.Platypus.RD.1777',
+                'GEL_GL_5277', 'GEL_Platypus_RD_1777',
                 'GNOMAD_GENOMES_ALL', 'GNOMAD_GENOMES_AFR', 'GNOMAD_GENOMES_AMR', 'GNOMAD_GENOMES_EAS',
                 'GNOMAD_GENOMES_NFE', 'GNOMAD_GENOMES_FIN', 'GNOMAD_GENOMES_FEMALE', 'GNOMAD_GENOMES_MALE',
                 '1kG_phase3_ALL', '1kG_phase3_SAS', '1kG_phase3_AFR', '1kG_phase3_EUR', '1kG_phase3_AMR',
@@ -81,17 +81,17 @@ with open(annotFile) as f:
         hash_variant['rsid'] = hash_variant['rsid'].replace(",", ";")
 
         if "additionalAttributes" in annot["annotation"]:
-            if "GEL_GL_6628" in annot["annotation"]["additionalAttributes"]:
-                hash_variant['GEL.GL.5277'] = \
+            if "GEL.GL.5277" in annot["annotation"]["additionalAttributes"]:
+                hash_variant['GEL_GL_5277'] = \
                     annot.get("annotation").get("additionalAttributes").get("GEL.GL.5277").get("attribute").get(
                         "AF", '.')
             if "GEL.Platypus.RD.1777" in annot["annotation"]["additionalAttributes"]:
-                hash_variant['GEL.Platypus.RD.1777'] = \
+                hash_variant['GEL_Platypus_RD_1777'] = \
                     annot.get("annotation").get("additionalAttributes").get("GEL.Platypus.RD.1777").get('attribute').get(
                         'AF', '.')
         else:
-            hash_variant['GEL.GL.5277'] = '.'
-            hash_variant['GEL.Platypus.RD.1777'] = '.'
+            hash_variant['GEL_GL_5277'] = '.'
+            hash_variant['GEL_Platypus_RD_1777'] = '.'
 
         # Extract CellBase annotation for GNOMAD_EXOMES-ALL
         if "populationFrequencies" in annot["annotation"] and len(annot["annotation"]["populationFrequencies"]) > 0:
