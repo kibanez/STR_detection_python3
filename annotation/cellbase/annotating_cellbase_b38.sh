@@ -1,4 +1,4 @@
-module load cellbase
+module load bio/cellbase/v4.7.1
 
 if [[ $# -eq 0 ]] ; then
     echo 'Two arguments are required: 1) the VCF file to be annotated and 2) the output directory to save the corresponding annotated json file'
