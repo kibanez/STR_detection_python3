@@ -75,7 +75,7 @@ def print_tables(hash_table, f_output):
     fo.close()
 
 
-def merging_vcf(l_vcf, path_vcf, logger):
+def merging_vcf(l_vcf, path_vcf, l_samples, logger):
     """
     Function that receives a list of individual VCF files to merge them all
 
@@ -93,9 +93,9 @@ def merging_vcf(l_vcf, path_vcf, logger):
 
     total_samples = len(l_vcf)
 
-    for vcf_input in l_vcf:
+    for index, vcf_input in enumerate(l_vcf):
 
-        name_vcf = vcf_input
+        name_vcf = l_samples[index]
 
         vcf_input = os.path.join(path_vcf, vcf_input)
 
@@ -408,11 +408,12 @@ def run(argv=None):
         l_samples = []
 
         for vcf in l_vcf:
-            sample_name = re.sub('^EH_', '', vcf)
-            sample_name = re.sub('.vcf$', '', sample_name)
+            #sample_name = re.sub('^EH_', '', vcf)
+            #sample_name = re.sub('.vcf$', '', sample_name)
+            sample_name = re.sub('.expansion_hunter3.vcf$', '', vcf)
             l_samples.append(sample_name)
 
-        hash_table = merging_vcf(l_vcf, path_samples, logger)
+        hash_table = merging_vcf(l_vcf, path_samples, l_samples, logger)
 
         print_tables(hash_table, output_file)
 

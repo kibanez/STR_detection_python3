@@ -10,19 +10,20 @@
 # PyYAML (if visualizing output from versions older than v3) -- pip3.7 install pyyaml
 
 # Path to the binary python file
-GRAPH_SCRIPT=/genomes/scratch/kgarikano/GEL_STR/Visualisation/GraphAlignmentViewer/GraphAlignmentViewer.py
+GRAPH_SCRIPT=/Users/kibanez/git/GraphAlignmentViewer/GraphAlignmentViewer.py
 
 # Fasta file with .fai index for reference sequence. If not provided, flanks are set to 'N'. Default: None--reference_fasta REFERENCE_FASTA
-REFERENCE_FASTA=/genomes/resources/genomeref/Illumina/Homo_sapiens/NCBI/GRCh38Decoy/Sequence/WholeGenomeFasta/genome.fa
+#REFERENCE_FASTA=/genomes/resources/genomeref/Illumina/Homo_sapiens/NCBI/GRCh38Decoy/Sequence/WholeGenomeFasta/genome.fa
+REFERENCE_FASTA=/Volumes/KIKU_STRs/data/reference_GEL_GRCh38/genome.fa
 
 # Path to variant catalog used to run EH v3
-VARIANT_CATALOG_V3=/genomes/scratch/kgarikano/GEL_STR/specs/EHv3.1.2/GRCh38/variant_catalog_GRCh38_12oct2019.json
+VARIANT_CATALOG_V3=/Users/kibanez/Documents/STRs/specs/EHv3.2.2/batch_march2020/GRCh38/variant_catalog_GRCh38_2march2020.json
 
 # Input folder where the json/vcf/log or bam files are
-INPUT_FOLDER=/genomes/scratch/kgarikano/GEL_STR/Validation_golden_table/output_EHv3.1.2/
+INPUT_FOLDER=/Volumes/KIKU_STRs/data/gnomAD/EHv322/data/
 
 # Output folder where we want the plots
-OUTPUT_FOLDER=/genomes/scratch/kgarikano/GEL_STR/Visualisation/random_plots/
+OUTPUT_FOLDER=/Users/kibanez/Documents/STRs/ANALYSIS/population_research/PAPER/carriers/pileup_gnomAD/figures
 
 # Parameters passing by console
 if [ $# -ne 1 ]
@@ -47,8 +48,10 @@ while read line; do
     ID_NAME='EH_'${NAMES[0]}
     LOCUS_ID=${NAMES[1]}
 
-    INPUT_BAM=${INPUT_FOLDER}${ID_NAME}'_realigned.bam'
-    INPUT_VCF=${INPUT_FOLDER}${ID_NAME}'.vcf'
+    #INPUT_BAM=${INPUT_FOLDER}${ID_NAME}'_realigned.bam'
+    #INPUT_VCF=${INPUT_FOLDER}${ID_NAME}'.vcf'
+    INPUT_BAM=${INPUT_FOLDER}${ID_NAME}'.expansion_hunter3_realigned.bam'
+    INPUT_VCF=${INPUT_FOLDER}${ID_NAME}'.expansion_hunter3.vcf'
 
     OUTPUT_FILE_NAME=${ID_NAME}'_'${LOCUS_ID}
 
