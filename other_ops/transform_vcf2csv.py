@@ -10,6 +10,7 @@ import optparse
 import os
 import sys
 import vcf
+from operator import itemgetter
 
 
 class OptionParser(optparse.OptionParser):
@@ -25,65 +26,78 @@ class OptionParser(optparse.OptionParser):
             return True
 
 
-def print_tables(hash_table, f_output):
+def print_tables(hash_table, f_output, l_samples):
     """
-    Function that prints two tsv files: one containing all the EH VCF, already enriched somehow
-    and the other table, containing only the STR loci that are spotted by having more repetitions that theoretically
-    and in practice have been seen
+    Function that prints csv file from annotated VCF file
 
-    :param hash_table: it contains the frequencies for each locus
-    :param f_output: file in where the function will write the info in hash_table
+    :param hash_table: it contains the whole VCF file records
+    :param f_output: csv file to write to
+    :param l_samples: list of sample IDs
     :return:
     """
 
-    l_fields = ['chr', 'start', 'end', 'allele', 'gene', 'ref', 'alt', 'Repeat_Motif',
-                'num_samples', 'AF', 'list_samples']
-
+    l_fields = ['chr', 'pos', 'ref', 'alt', 'QUAL', 'FILTER',
+                'Func.refGene', 'Gene.refGene', 'GeneDetail.refGene', 'ExonicFunc.refGene', 'AAChange.refGene',
+                'cytoBand', 'ExAC_ALL', 'ExAC_AFR', 'ExAC_AMR', 'ExAC_EAS', 'ExAC_FIN', 'ExAC_NFE', 'ExAC_OTH',
+                'ExAC_SAS',
+                'avsnp147', 'SIFT_score', 'SIFT_pred', 'Polyphen2_HDIV_score', 'Polyphen2_HDIV_pred',
+                'Polyphen2_HVAR_score',
+                'Polyphen2_HVAR_pred', 'LRT_score', 'LRT_pred', 'MutationTaster_score', 'MutationTaster_pred',
+                'MutationAssessor_score', 'MutationAssessor_pred', 'FATHMM_score', 'FATHMM_pred', 'PROVEAN_score',
+                'PROVEAN_pred', 'VEST3_score', 'CADD_raw', 'CADD_phred', 'DANN_score', 'fathmm-MKL_coding_score',
+                'fathmm-MKL_coding_pred', 'MetaSVM_score', 'MetaSVM_pred', 'MetaLR_score', 'MetaLR_pred',
+                'integrated_fitCons_score', 'integrated_confidence_value', 'GERP++_RS', 'phyloP7way_vertebrate',
+                'phyloP20way_mammalian', 'phastCons7way_vertebrate', 'phastCons20way_mammalian', 'SiPhy_29way_logOdds']
+    l_fields = l_fields + l_samples
+    
     l_chr = set([item[0] for item in hash_table.keys()])
 
-    chr_specials = []
-    if 'X' in l_chr:
-        l_chr.remove('X')
-        chr_specials.append('X')
-    elif 'Y' in l_chr:
-        l_chr.remove('Y')
-        chr_specials.append('Y')
-
-    l_chr = sorted(l_chr)
-    l_chr = [str(i) for i in l_chr]
-
-    for i in chr_specials:
-        l_chr.append(i)
-
     fo = open(f_output, 'w')
-    fo.write('\t'.join(l_fields) + '\n')
-    for key in sorted(sorted(hash_table.keys(), key=itemgetter(1)), key=lambda x: l_chr.index(x[0])):
-        fo.write('\t'.join(map(lambda field: hash_table[key].get(field, '.'), l_fields)) + '\n')
+    fo.write(', '.join(l_fields) + '\n')
+    for key in sorted(hash_table.keys(), key=itemgetter(1)):
+        fo.write(', '.join(map(lambda field: hash_table[key].get(field, '.'), l_fields)) + '\n')
     fo.close()
 
 
-def read_vcf(input_vcf, logger):
+def read_annovar_vcf(input_vcf):
+    """
+    Function that reads annotated VCF file with PyVCF
+    :param input_vcf: annotated VCF with annovar
+    :return: hash table with all records (defined as tuple of (chr, pos, alt)) with all corresponding info, genomic
+    and functional
+    """
     hash_table = {}
     vcf_reader = vcf.Reader(filename=input_vcf)
 
     for i, r in enumerate(vcf_reader):
+        hash_variant = {}
+
         hash_fields = dict(r.INFO)
         hash_fields.update(dict(zip(r.samples[0].data._fields, r.samples[0].data)))
 
         chrom = r.CHROM
-        pos = r.POS
-        alt = r.ALT
+        pos = str(r.POS)
+        ref = str(r.REF)
+        alt = str(r.ALT[0])
         l_samples = len(r.samples)
 
-        hash_variant = {}
-        hash_variant['QUAL'] = str(hash_fields.get('QUAL', '.'))
-        hash_variant['FILTER'] = str(hash_fields.get('FILTER', '.'))
-        hash_variant['Func.refGene'] = str(hash_fields.get('Func.refGene', '.'))
-        hash_variant['Gene.refGene'] = str(hash_fields.get('Gene.refGene', '.'))
-        hash_variant['GeneDetail.refGene'] = str(hash_fields.get('GeneDetail.refGene', '.'))
-        hash_variant['ExonicFunc.refGene'] = str(hash_fields.get('ExonicFunc.refGene', '.'))
-        hash_variant['AAChange.refGene'] = str(hash_fields.get('AAChange.refGene', '.'))
-        hash_variant['cytoBand'] = str(hash_fields.get('cytoBand', '.'))
+        if r.FILTER == []:
+            hash_variant['FILTER'] = "PASS"
+        else:
+            hash_variant['FILTER'] = str(r.FILTER)
+
+        hash_variant['QUAL'] = str(r.QUAL)
+
+        hash_variant['chr'] = chrom
+        hash_variant['pos'] = pos
+        hash_variant['ref'] = ref
+        hash_variant['alt'] = alt
+        hash_variant['Func.refGene'] = str(hash_fields.get('Func.refGene', '.')[0])
+        hash_variant['Gene.refGene'] = str(hash_fields.get('Gene.refGene', '.')[0])
+        hash_variant['GeneDetail.refGene'] = str(hash_fields.get('GeneDetail.refGene', '.')[0])
+        hash_variant['ExonicFunc.refGene'] = str(hash_fields.get('ExonicFunc.refGene', '.')[0])
+        hash_variant['AAChange.refGene'] = str(hash_fields.get('AAChange.refGene', '.')[0])
+        hash_variant['cytoBand'] = str(hash_fields.get('cytoBand', '.')[0])
         hash_variant['ExAC_ALL'] = str(hash_fields.get('ExAC_ALL', '.'))
         hash_variant['ExAC_AFR'] = str(hash_fields.get('ExAC_AFR', '.'))
         hash_variant['ExAC_AMR'] = str(hash_fields.get('ExAC_AMR', '.'))
@@ -92,47 +106,53 @@ def read_vcf(input_vcf, logger):
         hash_variant['ExAC_NFE'] = str(hash_fields.get('ExAC_NFE', '.'))
         hash_variant['ExAC_OTH'] = str(hash_fields.get('ExAC_OTH', '.'))
         hash_variant['ExAC_SAS'] = str(hash_fields.get('ExAC_SAS', '.'))
-        hash_variant['avsnp147'] = str(hash_fields.get('avsnp147', '.'))
-        hash_variant['SIFT_score'] = str(hash_fields.get('SIFT_score', '.'))
-        hash_variant['SIFT_pred'] = str(hash_fields.get('SIFT_pred', '.'))
-        hash_variant['Polyphen2_HDIV_score'] = str(hash_fields.get('Polyphen2_HDIV_score', '.'))
-        hash_variant['Polyphen2_HDIV_pred'] = str(hash_fields.get('Polyphen2_HDIV_pred', '.'))
-        hash_variant['Polyphen2_HVAR_score'] = str(hash_fields.get('Polyphen2_HVAR_score', '.'))
-        hash_variant['Polyphen2_HVAR_pred'] = str(hash_fields.get('Polyphen2_HVAR_pred', '.'))
-        hash_variant['LRT_score'] = str(hash_fields.get('LRT_score', '.'))
-        hash_variant['LRT_pred'] = str(hash_fields.get('LRT_pred', '.'))
-        hash_variant['MutationTaster_score'] = str(hash_fields.get('MutationTaster_score', '.'))
-        hash_variant['MutationTaster_pred'] = str(hash_fields.get('MutationTaster_pred', '.'))
-        hash_variant['MutationAssessor_score'] = str(hash_fields.get('MutationAssessor_score', '.'))
-        hash_variant['MutationAssessor_pred'] = str(hash_fields.get('MutationAssessor_pred', '.'))
-        hash_variant['FATHMM_score'] = str(hash_fields.get('FATHMM_score', '.'))
-        hash_variant['FATHMM_pred'] = str(hash_fields.get('FATHMM_pred', '.'))
-        hash_variant['PROVEAN_score'] = str(hash_fields.get('PROVEAN_score', '.'))
-        hash_variant['PROVEAN_pred'] = str(hash_fields.get('PROVEAN_pred', '.'))
-        hash_variant['VEST3_score'] = str(hash_fields.get('VEST3_score', '.'))
-        hash_variant['CADD_raw'] = str(hash_fields.get('CADD_raw', '.'))
-        hash_variant['CADD_phred'] = str(hash_fields.get('CADD_phred', '.'))
-        hash_variant['DANN_score'] = str(hash_fields.get('DANN_score', '.'))
-        hash_variant['fathmm-MKL_coding_score'] = str(hash_fields.get('fathmm-MKL_coding_score', '.'))
-        hash_variant['fathmm-MKL_coding_pred'] = str(hash_fields.get('fathmm-MKL_coding_pred', '.'))
-        hash_variant['MetaSVM_score'] = str(hash_fields.get('MetaSVM_score', '.'))
-        hash_variant['MetaSVM_pred'] = str(hash_fields.get('MetaSVM_pred', '.'))
-        hash_variant['MetaLR_score'] = str(hash_fields.get('MetaLR_score', '.'))
-        hash_variant['MetaLR_pred'] = str(hash_fields.get('MetaLR_pred', '.'))
-        hash_variant['integrated_fitCons_score'] = str(hash_fields.get('integrated_fitCons_score', '.'))
-        hash_variant['integrated_confidence_value'] = str(hash_fields.get('integrated_confidence_value', '.'))
-        hash_variant['GERP++_RS'] = str(hash_fields.get('GERP++_RS', '.'))
-        hash_variant['phyloP7way_vertebrate'] = str(hash_fields.get('phyloP7way_vertebrate', '.'))
-        hash_variant['phyloP20way_mammalian'] = str(hash_fields.get('phyloP20way_mammalian', '.'))
-        hash_variant['phastCons7way_vertebrate'] = str(hash_fields.get('phastCons7way_vertebrate', '.'))
-        hash_variant['phastCons20way_mammalian'] = str(hash_fields.get('phastCons20way_mammalian', '.'))
-        hash_variant['SiPhy_29way_logOdds'] = str(hash_fields.get('SiPhy_29way_logOdds', '.'))
+        hash_variant['avsnp147'] = str(hash_fields.get('avsnp147', '.')[0])
+        hash_variant['SIFT_score'] = str(hash_fields.get('SIFT_score', '.')[0])
+        hash_variant['SIFT_pred'] = str(hash_fields.get('SIFT_pred', '.')[0])
+        hash_variant['Polyphen2_HDIV_score'] = str(hash_fields.get('Polyphen2_HDIV_score', '.')[0])
+        hash_variant['Polyphen2_HDIV_pred'] = str(hash_fields.get('Polyphen2_HDIV_pred', '.')[0])
+        hash_variant['Polyphen2_HVAR_score'] = str(hash_fields.get('Polyphen2_HVAR_score', '.')[0])
+        hash_variant['Polyphen2_HVAR_pred'] = str(hash_fields.get('Polyphen2_HVAR_pred', '.')[0])
+        hash_variant['LRT_score'] = str(hash_fields.get('LRT_score', '.')[0])
+        hash_variant['LRT_pred'] = str(hash_fields.get('LRT_pred', '.')[0])
+        hash_variant['MutationTaster_score'] = str(hash_fields.get('MutationTaster_score', '.')[0])
+        hash_variant['MutationTaster_pred'] = str(hash_fields.get('MutationTaster_pred', '.')[0])
+        hash_variant['MutationAssessor_score'] = str(hash_fields.get('MutationAssessor_score', '.')[0])
+        hash_variant['MutationAssessor_pred'] = str(hash_fields.get('MutationAssessor_pred', '.')[0])
+        hash_variant['FATHMM_score'] = str(hash_fields.get('FATHMM_score', '.')[0])
+        hash_variant['FATHMM_pred'] = str(hash_fields.get('FATHMM_pred', '.')[0])
+        hash_variant['PROVEAN_score'] = str(hash_fields.get('PROVEAN_score', '.')[0])
+        hash_variant['PROVEAN_pred'] = str(hash_fields.get('PROVEAN_pred', '.')[0])
+        hash_variant['VEST3_score'] = str(hash_fields.get('VEST3_score', '.')[0])
+        hash_variant['CADD_raw'] = str(hash_fields.get('CADD_raw', '.')[0])
+        hash_variant['CADD_phred'] = str(hash_fields.get('CADD_phred', '.')[0])
+        hash_variant['DANN_score'] = str(hash_fields.get('DANN_score', '.')[0])
+        hash_variant['fathmm-MKL_coding_score'] = str(hash_fields.get('fathmm-MKL_coding_score', '.')[0])
+        hash_variant['fathmm-MKL_coding_pred'] = str(hash_fields.get('fathmm-MKL_coding_pred', '.')[0])
+        hash_variant['MetaSVM_score'] = str(hash_fields.get('MetaSVM_score', '.')[0])
+        hash_variant['MetaSVM_pred'] = str(hash_fields.get('MetaSVM_pred', '.')[0])
+        hash_variant['MetaLR_score'] = str(hash_fields.get('MetaLR_score', '.')[0])
+        hash_variant['MetaLR_pred'] = str(hash_fields.get('MetaLR_pred', '.')[0])
+        hash_variant['integrated_fitCons_score'] = str(hash_fields.get('integrated_fitCons_score', '.')[0])
+        hash_variant['integrated_confidence_value'] = str(hash_fields.get('integrated_confidence_value', '.')[0])
+        hash_variant['GERP++_RS'] = str(hash_fields.get('GERP++_RS', '.')[0])
+        hash_variant['phyloP7way_vertebrate'] = str(hash_fields.get('phyloP7way_vertebrate', '.')[0])
+        hash_variant['phyloP20way_mammalian'] = str(hash_fields.get('phyloP20way_mammalian', '.')[0])
+        hash_variant['phastCons7way_vertebrate'] = str(hash_fields.get('phastCons7way_vertebrate', '.')[0])
+        hash_variant['phastCons20way_mammalian'] = str(hash_fields.get('phastCons20way_mammalian', '.')[0])
+        hash_variant['SiPhy_29way_logOdds'] = str(hash_fields.get('SiPhy_29way_logOdds', '.')[0])
 
-        for vcf in l_samples:
-            hash_variant[vcf] = "."
+        l_samples = r.samples[::]
+        l_sample_ids = []
+        for sample in l_samples:
+            sample_id = sample.sample
+            sample_gt = sample.data.GT
+            hash_variant[sample_id] = sample_gt
+            l_sample_ids.append(sample_id)
 
         hash_table[(chrom, pos, alt)] = hash_variant
 
+    return hash_table, l_sample_ids
 
 
 def run(argv=None):
@@ -162,8 +182,6 @@ def run(argv=None):
     if not parser.check_required("--O"):
         raise IOError('The output directory in which the tabulated data will be written is missing')
 
-
-
     input_vcf = options.input_vcf
 
     if not os.path.isfile(input_vcf):
@@ -192,8 +210,8 @@ def run(argv=None):
     logger.setLevel(logging.INFO)
     logger.addHandler(console)
 
-    hash_table = read_vcf(input_vcf, logger)
-    print_tables(hash_table, output_file)
+    hash_table, l_samples = read_annovar_vcf(input_vcf)
+    print_tables(hash_table, output_file, l_samples)
 
 
 if __name__ == '__main__':
