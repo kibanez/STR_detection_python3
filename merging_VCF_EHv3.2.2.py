@@ -408,9 +408,9 @@ def run(argv=None):
         l_samples = []
 
         for vcf in l_vcf:
-            #sample_name = re.sub('^EH_', '', vcf)
-            #sample_name = re.sub('.vcf$', '', sample_name)
-            sample_name = re.sub('.expansion_hunter3.vcf$', '', vcf)
+            sample_name = re.sub('^EH_', '', vcf)
+            sample_name = re.sub('.vcf$', '', sample_name)
+            #sample_name = re.sub('.expansion_hunter3.vcf$', '', vcf)
             l_samples.append(sample_name)
 
         hash_table = merging_vcf(l_vcf, path_samples, l_samples, logger)
