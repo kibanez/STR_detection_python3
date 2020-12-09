@@ -53,9 +53,9 @@ def print_tables(hash_table, f_output, l_samples):
     l_chr = set([item[0] for item in hash_table.keys()])
 
     fo = open(f_output, 'w')
-    fo.write(', '.join(l_fields) + '\n')
+    fo.write(','.join(l_fields) + '\n')
     for key in sorted(hash_table.keys(), key=itemgetter(1)):
-        fo.write(', '.join(map(lambda field: hash_table[key].get(field, '.'), l_fields)) + '\n')
+        fo.write(','.join(map(lambda field: hash_table[key].get(field, '.'), l_fields)) + '\n')
     fo.close()
 
 
@@ -88,10 +88,10 @@ def read_annovar_vcf(input_vcf):
 
         hash_variant['QUAL'] = str(r.QUAL)
 
-        hash_variant['chr'] = chrom
-        hash_variant['pos'] = pos
-        hash_variant['ref'] = ref
-        hash_variant['alt'] = alt
+        hash_variant['chr'] = chrom.strip()
+        hash_variant['pos'] = pos.strip()
+        hash_variant['ref'] = ref.strip()
+        hash_variant['alt'] = alt.strip()
         hash_variant['Func.refGene'] = str(hash_fields.get('Func.refGene', '.')[0])
         hash_variant['Gene.refGene'] = str(hash_fields.get('Gene.refGene', '.')[0])
         hash_variant['GeneDetail.refGene'] = str(hash_fields.get('GeneDetail.refGene', '.')[0])
